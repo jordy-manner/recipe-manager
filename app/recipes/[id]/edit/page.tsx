@@ -1,9 +1,7 @@
-
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { asLines, withFlatTags } from "@/lib/recipes";
+import { asLines, flattenRecipe } from "@/lib/recipes";
 import { updateRecipeAction } from "../../actions";
 import { RecipeForm } from "../../recipe-form";
 
@@ -13,19 +11,26 @@ export const metadata = { title: "Modifier la recette" };
 
 export default async function EditRecipePage({ params }: Props) {
   const { id } = await params;
-  const row = await prisma.recipe.findUnique({
-    where: { id },
-    include: {
-      ingredients: { orderBy: { position: "asc" } },
-      recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
-    },
-  });
+  const [row, ingredients, units] = await Promise.all([
+    prisma.recipe.findUnique({
+      where: { id },
+      include: {
+        recipeIngredients: {
+          include: { ingredient: true, unit: true },
+          orderBy: { position: "asc" },
+        },
+        recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
+      },
+    }),
+    prisma.ingredient.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+    prisma.unit.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+  ]);
 
   if (!row) {
     notFound();
   }
 
-  const recipe = withFlatTags(row);
+  const recipe = flattenRecipe(row);
 
   // updateRecipeAction(id, prevState, formData) → on fige l'id via bind.
   const action = updateRecipeAction.bind(null, recipe.id);
@@ -39,13 +44,19 @@ export default async function EditRecipePage({ params }: Props) {
       <RecipeForm
         action={action}
         submitLabel="Enregistrer"
+        ingredientOptions={ingredients.map((i) => i.name)}
+        unitOptions={units.map((u) => u.name)}
         defaultValues={{
           title: recipe.title,
           description: recipe.description ?? "",
           servings: recipe.servings?.toString() ?? "",
           prepTime: recipe.prepTime?.toString() ?? "",
           cookTime: recipe.cookTime?.toString() ?? "",
-          ingredients: recipe.ingredients.map((i) => i.name).join("\n"),
+          ingredients: recipe.ingredients.map((i) => ({
+            name: i.name,
+            quantity: i.quantity?.toString() ?? "",
+            unit: i.unit ?? "",
+          })),
           steps: asLines(recipe.steps).join("\n"),
           tags: recipe.tags.map((t) => t.name).join(", "),
         }}

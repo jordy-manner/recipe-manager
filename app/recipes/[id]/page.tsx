@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { asLines, withFlatTags } from "@/lib/recipes";
+import { asLines, flattenRecipe } from "@/lib/recipes";
 import { deleteRecipeAction } from "../actions";
 
 type Props = { params: Promise<{ id: string }> };
@@ -27,7 +27,10 @@ export default async function RecipeDetailPage({ params }: Props) {
   const row = await prisma.recipe.findUnique({
     where: { id },
     include: {
-      ingredients: { orderBy: { position: "asc" } },
+      recipeIngredients: {
+        include: { ingredient: true, unit: true },
+        orderBy: { position: "asc" },
+      },
       recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
     },
   });
@@ -36,7 +39,7 @@ export default async function RecipeDetailPage({ params }: Props) {
     notFound();
   }
 
-  const recipe = withFlatTags(row);
+  const recipe = flattenRecipe(row);
   const ingredients = recipe.ingredients;
   const steps = asLines(recipe.steps);
 
@@ -95,9 +98,20 @@ export default async function RecipeDetailPage({ params }: Props) {
         <section className="mb-8">
           <h2 className="mb-3 text-lg font-semibold">Ingrédients</h2>
           <ul className="list-disc space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
-            {ingredients.map((item) => (
-              <li key={item.id}>{item.name}</li>
-            ))}
+            {ingredients.map((item) => {
+              const qty = [
+                item.quantity !== null ? item.quantity : null,
+                item.unit,
+              ]
+                .filter((p) => p !== null && p !== "")
+                .join(" ");
+              return (
+                <li key={item.id}>
+                  {qty && <span className="font-medium">{qty} </span>}
+                  {item.name}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

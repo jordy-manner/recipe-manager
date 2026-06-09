@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
-  ingredientsCreate,
+  flattenRecipe,
+  recipeIngredientsCreate,
   recipeScalars,
   recipeTagsCreate,
   validateRecipeInput,
-  withFlatTags,
 } from "@/lib/recipes";
 
-// Inclut les relations : ingrédients ordonnés, tags via la jonction RecipeTag.
+// Inclut les relations : ingrédients (avec leur unité) ordonnés, tags triés.
 const withRelations = {
-  ingredients: { orderBy: { position: "asc" } },
+  recipeIngredients: {
+    include: { ingredient: true, unit: true },
+    orderBy: { position: "asc" },
+  },
   recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
 } as const;
 
@@ -20,7 +23,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: withRelations,
   });
-  return NextResponse.json(recipes.map(withFlatTags));
+  return NextResponse.json(recipes.map(flattenRecipe));
 }
 
 // POST /api/recipes — création
@@ -40,10 +43,10 @@ export async function POST(request: Request) {
   const recipe = await prisma.recipe.create({
     data: {
       ...recipeScalars(result.data),
-      ingredients: { create: ingredientsCreate(result.data) },
+      recipeIngredients: { create: recipeIngredientsCreate(result.data) },
       recipeTags: { create: recipeTagsCreate(result.data) },
     },
     include: withRelations,
   });
-  return NextResponse.json(withFlatTags(recipe), { status: 201 });
+  return NextResponse.json(flattenRecipe(recipe), { status: 201 });
 }

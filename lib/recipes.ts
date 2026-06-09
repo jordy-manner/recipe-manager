@@ -1,8 +1,16 @@
 // Types et validation partagés entre les API Routes et les Server Actions.
 //
-// Choix de modélisation : `ingredients` et `steps` sont stockés en `Json`
-// (colonnes Prisma) sous forme de tableaux de chaînes — une ligne = un élément.
-// `tags` est un `String[]` Postgres natif.
+// Modélisation :
+// - ingredients : relation many-to-many via RecipeIngredient (nom d'ingrédient +
+//   quantité + unité). Ingredient et Unit sont des catalogues (name unique).
+// - steps : colonne Json (tableau de chaînes, une par étape).
+// - tags : many-to-many via RecipeTag.
+
+export type IngredientInput = {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+};
 
 export type RecipeInput = {
   title: string;
@@ -10,7 +18,7 @@ export type RecipeInput = {
   servings: number | null;
   prepTime: number | null;
   cookTime: number | null;
-  ingredients: string[];
+  ingredients: IngredientInput[];
   steps: string[];
   tags: string[];
 };
@@ -19,7 +27,7 @@ export type ValidationResult =
   | { ok: true; data: RecipeInput }
   | { ok: false; errors: string[] };
 
-/** Lit une valeur Json inconnue comme un tableau de chaînes (pour l'affichage). */
+/** Lit une valeur Json inconnue comme un tableau de chaînes (pour l'affichage des étapes). */
 export function asLines(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((v) => String(v)).filter((s) => s.trim().length > 0);
@@ -47,10 +55,7 @@ function splitTags(value: unknown): string[] {
     .filter((s) => s.length > 0);
 }
 
-/**
- * Convertit une valeur en entier positif optionnel.
- * Renvoie `undefined` si la valeur est invalide (≠ vide), pour signaler l'erreur.
- */
+/** Entier positif optionnel ; signale une erreur si fourni mais invalide. */
 function toOptionalInt(
   value: unknown,
   field: string,
@@ -66,8 +71,48 @@ function toOptionalInt(
 }
 
 /**
+ * Normalise un tableau d'ingrédients bruts ([{ name, quantity, unit }]).
+ * Les lignes sans nom sont ignorées ; une quantité fournie mais non numérique
+ * (ou négative) ajoute une erreur. La virgule décimale française est tolérée.
+ */
+function parseIngredients(value: unknown, errors: string[]): IngredientInput[] {
+  if (!Array.isArray(value)) return [];
+  const result: IngredientInput[] = [];
+
+  for (const row of value) {
+    if (typeof row !== "object" || row === null) continue;
+    const r = row as Record<string, unknown>;
+
+    const name = typeof r.name === "string" ? r.name.trim() : "";
+    if (name.length === 0) continue; // ligne vide → ignorée
+
+    let quantity: number | null = null;
+    const rawQty = r.quantity;
+    if (rawQty !== null && rawQty !== undefined && rawQty !== "") {
+      const q =
+        typeof rawQty === "number"
+          ? rawQty
+          : Number(String(rawQty).replace(",", ".").trim());
+      if (!Number.isFinite(q) || q < 0) {
+        errors.push(`Quantité invalide pour « ${name} »`);
+      } else {
+        quantity = q;
+      }
+    }
+
+    const unit =
+      typeof r.unit === "string" && r.unit.trim().length > 0
+        ? r.unit.trim()
+        : null;
+
+    result.push({ name, quantity, unit });
+  }
+
+  return result;
+}
+
+/**
  * Valide et normalise une entrée brute (corps JSON d'API ou FormData converti).
- * Accepte aussi bien des tableaux (API JSON) que des chaînes multi-lignes (form).
  */
 export function validateRecipeInput(raw: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
@@ -86,7 +131,7 @@ export function validateRecipeInput(raw: Record<string, unknown>): ValidationRes
   const prepTime = toOptionalInt(raw.prepTime, "Le temps de préparation", errors);
   const cookTime = toOptionalInt(raw.cookTime, "Le temps de cuisson", errors);
 
-  const ingredients = splitLines(raw.ingredients);
+  const ingredients = parseIngredients(raw.ingredients, errors);
   const steps = splitLines(raw.steps);
   const tags = splitTags(raw.tags);
 
@@ -98,6 +143,34 @@ export function validateRecipeInput(raw: Record<string, unknown>): ValidationRes
     ok: true,
     data: { title, description, servings, prepTime, cookTime, ingredients, steps, tags },
   };
+}
+
+/**
+ * Extrait les champs depuis un FormData. Les lignes d'ingrédients sont envoyées
+ * comme tableaux parallèles (ingredientName / ingredientQuantity / ingredientUnit),
+ * recombinés ligne par ligne.
+ */
+export function recipeInputFromFormData(formData: FormData): ValidationResult {
+  const names = formData.getAll("ingredientName");
+  const quantities = formData.getAll("ingredientQuantity");
+  const units = formData.getAll("ingredientUnit");
+
+  const ingredients = names.map((name, i) => ({
+    name,
+    quantity: quantities[i] ?? "",
+    unit: units[i] ?? "",
+  }));
+
+  return validateRecipeInput({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    servings: formData.get("servings"),
+    prepTime: formData.get("prepTime"),
+    cookTime: formData.get("cookTime"),
+    ingredients,
+    steps: formData.get("steps"),
+    tags: formData.get("tags"),
+  });
 }
 
 // --- Helpers pour les écritures Prisma (objets simples, sans import Prisma) ---
@@ -114,9 +187,26 @@ export function recipeScalars(input: RecipeInput) {
   };
 }
 
-/** Lignes d'ingrédients à créer (relation one-to-many), ordre préservé. */
-export function ingredientsCreate(input: RecipeInput) {
-  return input.ingredients.map((name, position) => ({ name, position }));
+/**
+ * Lignes de jonction RecipeIngredient à créer : pour chaque ingrédient on crée
+ * le lien (avec quantité + position) et on connecte/crée l'Ingredient et l'Unit
+ * par leur `name` unique.
+ */
+export function recipeIngredientsCreate(input: RecipeInput) {
+  return input.ingredients.map((ing, position) => ({
+    position,
+    quantity: ing.quantity,
+    ingredient: {
+      connectOrCreate: { where: { name: ing.name }, create: { name: ing.name } },
+    },
+    ...(ing.unit
+      ? {
+          unit: {
+            connectOrCreate: { where: { name: ing.unit }, create: { name: ing.unit } },
+          },
+        }
+      : {}),
+  }));
 }
 
 /**
@@ -129,27 +219,35 @@ export function recipeTagsCreate(input: RecipeInput) {
   }));
 }
 
-/**
- * Aplatit la relation `recipeTags` en un tableau `tags: { id, name }[]`
- * pour garder une forme ergonomique côté API et pages.
- */
-export function withFlatTags<
-  T extends { recipeTags: { tag: { id: string; name: string } }[] },
->(recipe: T): Omit<T, "recipeTags"> & { tags: { id: string; name: string }[] } {
-  const { recipeTags, ...rest } = recipe;
-  return { ...rest, tags: recipeTags.map((rt) => rt.tag) };
-}
+type RawRecipeTag = { tag: { id: string; name: string } };
+type RawRecipeIngredient = {
+  ingredientId: string;
+  ingredient: { name: string };
+  quantity: number | null;
+  unit: { name: string } | null;
+  position: number;
+};
 
-/** Extrait les champs d'une recette depuis un FormData. */
-export function recipeInputFromFormData(formData: FormData): ValidationResult {
-  return validateRecipeInput({
-    title: formData.get("title"),
-    description: formData.get("description"),
-    servings: formData.get("servings"),
-    prepTime: formData.get("prepTime"),
-    cookTime: formData.get("cookTime"),
-    ingredients: formData.get("ingredients"),
-    steps: formData.get("steps"),
-    tags: formData.get("tags"),
-  });
+/**
+ * Aplatit les relations `recipeTags` et `recipeIngredients` en formes
+ * ergonomiques (`tags`, `ingredients`) pour l'API et les pages.
+ */
+export function flattenRecipe<
+  T extends {
+    recipeTags: RawRecipeTag[];
+    recipeIngredients: RawRecipeIngredient[];
+  },
+>(recipe: T) {
+  const { recipeTags, recipeIngredients, ...rest } = recipe;
+  return {
+    ...rest,
+    tags: recipeTags.map((rt) => rt.tag),
+    ingredients: recipeIngredients.map((ri) => ({
+      id: ri.ingredientId,
+      name: ri.ingredient.name,
+      quantity: ri.quantity,
+      unit: ri.unit?.name ?? null,
+      position: ri.position,
+    })),
+  };
 }

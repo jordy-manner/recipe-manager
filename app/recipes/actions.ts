@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
-  ingredientsCreate,
+  recipeIngredientsCreate,
   recipeInputFromFormData,
   recipeScalars,
   recipeTagsCreate,
@@ -25,7 +25,7 @@ export async function createRecipeAction(
   const recipe = await prisma.recipe.create({
     data: {
       ...recipeScalars(result.data),
-      ingredients: { create: ingredientsCreate(result.data) },
+      recipeIngredients: { create: recipeIngredientsCreate(result.data) },
       recipeTags: { create: recipeTagsCreate(result.data) },
     },
   });
@@ -53,7 +53,10 @@ export async function updateRecipeAction(
     where: { id },
     data: {
       ...recipeScalars(result.data),
-      ingredients: { deleteMany: {}, create: ingredientsCreate(result.data) },
+      recipeIngredients: {
+        deleteMany: {},
+        create: recipeIngredientsCreate(result.data),
+      },
       recipeTags: { deleteMany: {}, create: recipeTagsCreate(result.data) },
     },
   });

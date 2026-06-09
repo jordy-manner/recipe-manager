@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { withFlatTags } from "@/lib/recipes";
 
 export const metadata = { title: "Recettes" };
 
@@ -11,7 +10,11 @@ export default async function RecipesPage() {
       recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
     },
   });
-  const recipes = rows.map(withFlatTags);
+  // La liste n'a besoin que des tags : on aplatit juste cette relation.
+  const recipes = rows.map((r) => ({
+    ...r,
+    tags: r.recipeTags.map((rt) => rt.tag),
+  }));
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">

@@ -23,22 +23,42 @@ model Recipe {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Lignes d'ingrédients propres à la recette (one-to-many, cascade).
-  ingredients Ingredient[]
+  // Ingrédients de la recette (many-to-many via jonction explicite RecipeIngredient,
+  // qui porte la quantité et l'unité).
+  recipeIngredients RecipeIngredient[]
   // Tags partagés (many-to-many via table de jonction explicite RecipeTag).
-  recipeTags  RecipeTag[]
+  recipeTags        RecipeTag[]
 }
 
-// Une ligne d'ingrédient appartient à une seule recette (ex. "250 g de farine").
+// Catalogue d'ingrédients réutilisables (ex. "farine", "œuf"). name unique.
 model Ingredient {
-  id       String @id @default(cuid())
-  name     String
-  position Int    @default(0) // ordre d'affichage dans la recette
+  id                String             @id @default(cuid())
+  name              String             @unique
+  recipeIngredients RecipeIngredient[]
+}
 
-  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  recipeId String
+// Catalogue d'unités de mesure réutilisables (ex. "g", "kg", "ml", "pincée", "unité").
+model Unit {
+  id                String             @id @default(cuid())
+  name              String             @unique
+  recipeIngredients RecipeIngredient[]
+}
 
-  @@index([recipeId])
+// Jonction explicite Recipe <-> Ingredient, porteuse de la quantité et de l'unité.
+// Table "RecipeIngredient" (colonnes recipeId / ingredientId, PK composite).
+model RecipeIngredient {
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId     String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  ingredientId String
+  quantity     Float? // ex. 250, 0.5, 3 — optionnel ("sel à volonté")
+  unit         Unit?      @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unitId       String?
+  position     Int        @default(0) // ordre d'affichage dans la recette
+
+  @@id([recipeId, ingredientId])
+  @@index([ingredientId])
+  @@index([unitId])
 }
 
 // Un tag est réutilisable et partagé entre plusieurs recettes.

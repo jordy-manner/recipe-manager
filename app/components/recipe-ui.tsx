@@ -72,11 +72,13 @@ export function RecipePhoto({
   imageUrl,
   title,
   label,
+  hue: hueOverride,
   className = "",
 }: {
   imageUrl?: string | null;
   title: string;
   label?: string;
+  hue?: number;
   className?: string;
 }) {
   if (imageUrl) {
@@ -89,7 +91,7 @@ export function RecipePhoto({
       />
     );
   }
-  const hue = hueFromString(title);
+  const hue = hueOverride ?? hueFromString(title);
   const bg = `linear-gradient(150deg, oklch(0.72 0.13 ${hue}) 0%, oklch(0.58 0.15 ${hue - 12}) 100%)`;
   return (
     <div

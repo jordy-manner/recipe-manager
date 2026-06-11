@@ -28,6 +28,11 @@
   --color-veg: #4b8b5a;
   --color-veg-soft: #d6f0da;
 
+  /* Amber — seasonal calendar (carbon "medium" tier, end-of-season state) */
+  --color-amber: oklch(0.7 0.13 70);
+  --color-amber-soft: oklch(0.93 0.06 78);
+  --color-amber-ink: oklch(0.48 0.12 64);
+
   /* Typography (next/font variables, with literal fallbacks) */
   --font-display: var(--font-newsreader), "Newsreader", Georgia, serif;
   --font-sans: var(--font-hanken), "Hanken Grotesk", system-ui, sans-serif;
@@ -46,6 +51,8 @@
 
   /* Animations */
   --animate-fade-up: fade-up 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-slide-in: slide-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.2s both;
 }
 
 @keyframes fade-up {
@@ -56,6 +63,26 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0.6;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

@@ -68,6 +68,34 @@ const paths: Record<string, ReactNode> = {
   tool: (
     <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.7 2.7-2-2 2.7-2.7Z" />
   ),
+  cherry: (
+    <>
+      <circle cx="7.5" cy="16.5" r="3.3" />
+      <circle cx="16.5" cy="15" r="3.3" />
+      <path d="M9.5 13.4C11 8 14 5 19 4" />
+      <path d="M16.3 12C15.2 8.5 16.6 5.8 19 4" />
+    </>
+  ),
+  carrot: (
+    <>
+      <path d="M14.6 9.4 6 18a2.1 2.1 0 0 0 3 3l8.6-8.6Z" />
+      <path d="M14.6 9.4c.2-2 1.5-3.4 3.5-3.5M14.6 9.4c-1.7-.7-2.4-2.6-1.7-4.5" />
+      <path d="M11.2 11.4l3.4 3.4" />
+    </>
+  ),
+  sprout: (
+    <>
+      <path d="M12 22V12" />
+      <path d="M12 12C12 8 9 6 4 6c0 4 3 6 8 6Z" />
+      <path d="M12 12c0-3 2-5 6-5 0 3-2 5-6 5Z" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+      <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof paths;

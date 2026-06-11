@@ -55,10 +55,12 @@ export function RecipeCard({
   r,
   big = false,
   match,
+  seasonCount,
 }: {
   r: RecipeCardData;
   big?: boolean;
   match?: { count: number; total: number };
+  seasonCount?: number;
 }) {
   const category = r.categories[0];
   const otherTags = r.tags.slice(0, big ? 3 : 2);
@@ -111,6 +113,14 @@ export function RecipeCard({
         )}
         <div className="mt-1 flex items-center justify-between gap-3">
           <MetaRow r={r} />
+          {seasonCount != null && seasonCount > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-veg">
+              <span className="grid h-[22px] w-[22px] place-items-center rounded-full bg-veg-soft">
+                <Icon name="leaf" size={12} strokeWidth={2} />
+              </span>
+              {seasonCount} de saison
+            </span>
+          )}
         </div>
         {big && (
           <span className="mt-1 inline-flex items-center gap-2 text-[15px] font-bold text-accent-ink transition group-hover:gap-3">

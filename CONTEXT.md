@@ -50,6 +50,11 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
 - `/recettes/[slug]` — recipe detail (lookup by `slug`).
 - `/recettes/[slug]/modifier` — edit.
 - `/recettes/nouvelle` — create.
+- `/saisons` — **seasonal calendar**: produce in season by month (band + `?m=`),
+  category/sort filters, seasonality search, and matched seasonal recipes.
+- `/saisons/[slug]` — product detail: a full page that, when opened from `/saisons`,
+  is shown as a **drawer** via parallel + intercepting routes (`@modal` slot +
+  `@modal/(.)[slug]`). Direct visit / refresh / share renders the full page.
 - `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/[id]` — REST mirror.
 
 Shared list helpers (`cardInclude`, `toCard`, `MagazineGrid`, `SectionHead`,
@@ -122,3 +127,7 @@ Rule: **use theme tokens only**, no hardcoded values. Home recipe layout = **Mag
 - `APP_MAINTENANCE` / `APP_MAINTENANCE_BYPASS` — maintenance mode (`proxy.ts`).
 - `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` (+ optional
   `CLOUDINARY_FOLDER`) — photo uploads. Unset → gradient placeholders, upload disabled.
+- `PEXELS_API_KEY` — seasonal calendar produce images (`lib/pexels.ts`, server-only,
+  cached). Unset → gradient placeholders. `IMPACTCO2_API_KEY` — optional ADEME key
+  (`lib/seasons.ts`); the dataset falls back to the committed snapshot in
+  `lib/seasons-data.ts` when the live API is unavailable.

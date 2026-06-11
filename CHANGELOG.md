@@ -2,6 +2,13 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.5] — 2026-06-11
+
+- New **seasonal calendar** (`/saisons`): fruits, vegetables and herbs in season by month (12-month band + `?m=`, current month by default), with their carbon footprint (ADEME Impact CO2), a seasonality search (typeahead), category filters with counts and sorting (in-season first / A→Z / carbon ↑), plus the matching recipes from the DB.
+- Product detail (`/saisons/[slug]`): a full, shareable page that opens as a **drawer** when navigated from the calendar (Next parallel + intercepting routes, `@modal` slot). 12-month availability bar, carbon block with ADEME note, related recipes.
+- Produce data from the **ADEME API** (server fetch, cached 24h) with a committed snapshot fallback (`lib/seasons-data.ts`); 6 demo herbs (marked "démo"). Produce photos via **Pexels** (server-side, cached; `PEXELS_API_KEY`), gradient placeholder fallback.
+- Recipe ↔ produce matching by accent-insensitive ingredient name; a `seasonCount` badge ("N de saison") on recipe cards. Added cherry/carrot/sprout/calendar icons, amber theme tokens, and the "Saisons" nav link.
+
 ## [v0.2.4] — 2026-06-11
 
 - Search runs **as you type** (debounced 300 ms, `router.replace`): removed the "Chercher" button; Enter still triggers immediately; a small spinner shows during the server fetch; the field re-focuses after the home → catalogue jump.

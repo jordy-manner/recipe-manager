@@ -21,6 +21,7 @@ export function Brand({ size = 21 }: { size?: number }) {
 const NAV = [
   { label: "Accueil", href: "/" },
   { label: "Recettes", href: "/recettes" },
+  { label: "Saisons", href: "/saisons" },
 ];
 
 export function TopBar() {

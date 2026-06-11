@@ -30,11 +30,6 @@ export function ProductCard({
           hue={product.hue}
         />
         <CategoryBadge category={product.category} className="absolute left-2.5 top-2.5 z-[2]" />
-        {product.demo && (
-          <span className="absolute right-2.5 top-2.5 z-[2] rounded-full bg-ink/55 px-2 py-[3px] font-mono text-[10px] uppercase tracking-wider text-white">
-            démo
-          </span>
-        )}
       </div>
       <div className="flex flex-col gap-2.5 px-3.5 pb-4 pt-3.5">
         <h3 className="font-display text-[17px] font-semibold leading-tight">{product.name}</h3>

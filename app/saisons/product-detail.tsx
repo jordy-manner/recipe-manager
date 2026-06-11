@@ -82,11 +82,6 @@ export function ProductDetail({
           </h1>
           <div className="flex flex-wrap items-center gap-2">
             <SeasonStatePill status={status} big />
-            {product.demo && (
-              <span className="rounded-full bg-surface-muted px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-ink-faint">
-                donnée démo
-              </span>
-            )}
           </div>
         </div>
 
@@ -119,7 +114,10 @@ export function ProductDetail({
           ) : (
             <p className="text-[13px] text-ink-faint">
               Donnée d&apos;empreinte non disponible
-              {product.demo ? " (herbe démo, hors source ADEME)" : ""}.
+              {product.category === "herbes"
+                ? " — les herbes aromatiques ne figurent pas dans la source ADEME"
+                : ""}
+              .
             </p>
           )}
         </div>

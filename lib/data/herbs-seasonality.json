@@ -1,0 +1,10 @@
+[
+  { "slug": "basilic", "name": "Basilic", "months": [7, 8] },
+  { "slug": "aneth", "name": "Aneth", "months": [6, 7, 8, 9] },
+  { "slug": "ciboulette", "name": "Ciboulette", "months": [4, 5, 6, 7, 8, 9] },
+  { "slug": "coriandre", "name": "Coriandre", "months": [8, 9, 10] },
+  { "slug": "persil", "name": "Persil", "months": [4, 5, 6, 7, 8, 9] },
+  { "slug": "thym", "name": "Thym", "months": [5, 6, 7, 8, 9] },
+  { "slug": "estragon", "name": "Estragon", "months": [5, 6, 7, 8, 9] },
+  { "slug": "menthe", "name": "Menthe", "months": [5, 6, 7, 8, 9, 10] }
+]

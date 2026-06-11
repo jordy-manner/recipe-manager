@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 import type { RecipeCardData } from "@/app/components/recipe-card";
 import { cardInclude, toCard, type CardRow } from "@/app/recettes/_shared";
 import { produceImage } from "@/lib/pexels";
+import { HERBS } from "@/lib/herbs";
 import {
-  DEMO_HERBS,
   PRODUCE_SNAPSHOT,
   hueForSlug,
   resolveMonth,
@@ -30,7 +30,7 @@ export type { SeasonStatus, CarbonTier } from "@/lib/seasons-data";
 
 /**
  * Live ADEME fetch (cached 24h) with the committed snapshot as fallback, plus
- * the demo herbs appended. `IMPACTCO2_API_KEY` is optional.
+ * the committed herb dataset appended. `IMPACTCO2_API_KEY` is optional.
  */
 export async function getProduce(): Promise<Produce[]> {
   let live: Produce[] | null = null;
@@ -68,7 +68,7 @@ export async function getProduce(): Promise<Produce[]> {
     // Network/API failure → snapshot.
   }
   const base = live ?? PRODUCE_SNAPSHOT;
-  return [...base, ...DEMO_HERBS];
+  return [...base, ...HERBS];
 }
 
 // --- Recipe ↔ produce matching (accent-insensitive, plural-tolerant) ---

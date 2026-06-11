@@ -2,8 +2,9 @@
 // "fruits et légumes" dataset (https://impactco2.fr/api/v1/fruitsetlegumes),
 // used as a fallback when the live API is unavailable. Schema kept identical:
 // { name, slug, months:[1..12], ecv (kg CO2e/kg), category }.
-// Herbs are NOT in the ADEME source — a small demo list is added, clearly
-// marked (demo: true, ecv: null).
+// Herbs are NOT in the ADEME source — they live in a committed dataset
+// (lib/data/herbs-seasonality.json, loaded via lib/herbs.ts) and are merged in
+// at runtime by getProduce(); they have no carbon data (ecv: null).
 
 export type ProduceCategory = "fruits" | "légumes" | "herbes";
 
@@ -11,9 +12,8 @@ export type Produce = {
   name: string;
   slug: string;
   months: number[]; // 1..12
-  ecv: number | null; // kg CO2e / kg (null for demo herbs)
+  ecv: number | null; // kg CO2e / kg (null for herbs — no ADEME footprint)
   category: ProduceCategory;
-  demo?: boolean;
   image?: string; // optional custom image, takes priority over Pexels
   hue: number; // deterministic, for the warm placeholder gradient
 };
@@ -60,21 +60,10 @@ const SNAPSHOT: RawProduce[] = [
   { name: "Pastèque", slug: "pasteque", months: [6, 7, 8, 9], ecv: 0.6805, category: "fruits" },
 ];
 
-const HERBS: RawProduce[] = [
-  { name: "Basilic", slug: "basilic", months: [5, 6, 7, 8, 9, 10], ecv: null, category: "herbes", demo: true },
-  { name: "Persil", slug: "persil", months: [3, 4, 5, 6, 7, 8, 9, 10, 11], ecv: null, category: "herbes", demo: true },
-  { name: "Ciboulette", slug: "ciboulette", months: [3, 4, 5, 6, 7, 8, 9, 10], ecv: null, category: "herbes", demo: true },
-  { name: "Menthe", slug: "menthe", months: [5, 6, 7, 8, 9, 10], ecv: null, category: "herbes", demo: true },
-  { name: "Thym", slug: "thym", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], ecv: null, category: "herbes", demo: true },
-  { name: "Coriandre", slug: "coriandre", months: [5, 6, 7, 8, 9], ecv: null, category: "herbes", demo: true },
-];
-
 const withHue = (p: RawProduce): Produce => ({ ...p, hue: hueForSlug(p.slug) });
 
 /** Committed fallback for fruits & légumes (used when the API is unavailable). */
 export const PRODUCE_SNAPSHOT: Produce[] = SNAPSHOT.map(withHue);
-/** Demo herbs (not in the ADEME source). */
-export const DEMO_HERBS: Produce[] = HERBS.map(withHue);
 
 export const MONTHS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -162,9 +151,11 @@ export const PEXELS_EN: Record<string, string> = {
   mangue: "mango",
   pasteque: "watermelon",
   basilic: "basil",
+  aneth: "dill",
   persil: "parsley",
   ciboulette: "chives",
   menthe: "mint leaves",
   thym: "thyme",
+  estragon: "tarragon",
   coriandre: "coriander leaves",
 };

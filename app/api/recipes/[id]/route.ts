@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   flattenRecipe,
+  recipeCategoriesCreate,
   recipeIngredientsCreate,
   recipeScalars,
   recipeTagsCreate,
@@ -22,6 +23,10 @@ const withRelations = {
     orderBy: { position: "asc" },
   },
   recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
+  recipeCategories: {
+    include: { category: true },
+    orderBy: { position: "asc" },
+  },
 } as const;
 
 // GET /api/recipes/[id]
@@ -75,6 +80,11 @@ export async function PUT(request: Request, { params }: Params) {
       },
       // Replace the tag links (the links, not the Tags themselves).
       recipeTags: { deleteMany: {}, create: recipeTagsCreate(result.data) },
+      // Replace the category links.
+      recipeCategories: {
+        deleteMany: {},
+        create: recipeCategoriesCreate(result.data),
+      },
     },
     include: withRelations,
   });

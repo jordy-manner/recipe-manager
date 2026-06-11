@@ -25,6 +25,16 @@ const UNITS = [
   "sachet",
 ];
 
+// Catalog of recipe categories (a recipe can have several).
+const CATEGORIES = [
+  "Plat de résistance",
+  "Entrée",
+  "Dessert",
+  "Accompagnement",
+  "Apéritif",
+  "Préparation",
+];
+
 // "<base> <size> cm" variant for utensils whose diameter matters
 // (dishes, saucepans, frying pans, crepe pans, molds…).
 const sizes = (base: string, diametres: number[]) =>
@@ -91,8 +101,11 @@ async function main() {
   for (const name of UTENSILS) {
     await prisma.utensil.upsert({ where: { name }, update: {}, create: { name } });
   }
+  for (const name of CATEGORIES) {
+    await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
+  }
   console.log(
-    `Seed terminé : ${UNITS.length} unités et ${UTENSILS.length} ustensiles garantis.`,
+    `Seed terminé : ${UNITS.length} unités, ${UTENSILS.length} ustensiles et ${CATEGORIES.length} catégories garantis.`,
   );
 }
 

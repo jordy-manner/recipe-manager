@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   flattenRecipe,
+  recipeCategoriesCreate,
   recipeIngredientsCreate,
   recipeScalars,
   recipeTagsCreate,
@@ -10,7 +11,7 @@ import {
 } from "@/lib/recipes";
 
 // Includes the relations: ordered ingredients (with their unit), ordered
-// utensils, sorted tags.
+// utensils, sorted tags, ordered categories.
 const withRelations = {
   recipeIngredients: {
     include: { ingredient: true, unit: true },
@@ -21,6 +22,10 @@ const withRelations = {
     orderBy: { position: "asc" },
   },
   recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
+  recipeCategories: {
+    include: { category: true },
+    orderBy: { position: "asc" },
+  },
 } as const;
 
 // GET /api/recipes — list of recipes (most recent first)
@@ -52,6 +57,7 @@ export async function POST(request: Request) {
       recipeIngredients: { create: recipeIngredientsCreate(result.data) },
       recipeUtensils: { create: recipeUtensilsCreate(result.data) },
       recipeTags: { create: recipeTagsCreate(result.data) },
+      recipeCategories: { create: recipeCategoriesCreate(result.data) },
     },
     include: withRelations,
   });

@@ -19,9 +19,25 @@ model Recipe {
   servings    Int?
   prepTime    Int? // minutes
   cookTime    Int? // minutes
+  difficulty  Int? // 1 = easy, 2 = medium, 3 = hard
+  rating      Float? // average rating out of 5
+  author      String?
+  popular     Boolean  @default(false) // featured in the "popular" section
   steps       Json     @default("[]")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Nutrition facts, per serving (all optional).
+  kcal    Int?
+  protein Int? // grams
+  carbs   Int? // grams
+  fat     Int? // grams
+
+  // Recipe photo. The image bytes live with the media provider (Cloudinary for
+  // now, see lib/media.ts); we only store the public URL + the provider id
+  // needed to delete it. Designed to swap to local storage later.
+  imageUrl      String?
+  imagePublicId String?
 
   // Ingredients of the recipe (many-to-many via the explicit RecipeIngredient
   // join, which carries the quantity and the unit).
@@ -31,6 +47,9 @@ model Recipe {
   recipeUtensils    RecipeUtensil[]
   // Shared tags (many-to-many via the explicit RecipeTag join table).
   recipeTags        RecipeTag[]
+  // Categories of the recipe (many-to-many via the explicit RecipeCategory
+  // join). A recipe can belong to several categories.
+  recipeCategories  RecipeCategory[]
 }
 
 // Catalog of reusable ingredients (e.g. "farine", "œuf"). Unique name.
@@ -85,6 +104,27 @@ model RecipeUtensil {
 
   @@id([recipeId, utensilId])
   @@index([utensilId])
+}
+
+// Catalog of recipe categories (e.g. "Plat de résistance", "Dessert"). Unique
+// name. Shared across recipes via the explicit RecipeCategory join.
+model Category {
+  id               String           @id @default(cuid())
+  name             String           @unique
+  recipeCategories RecipeCategory[]
+}
+
+// Explicit join table for the many-to-many Recipe <-> Category relation.
+// Table "RecipeCategory" (columns recipeId / categoryId, composite PK).
+model RecipeCategory {
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId   String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  position   Int      @default(0) // display order within the recipe
+
+  @@id([recipeId, categoryId])
+  @@index([categoryId])
 }
 
 // A tag is reusable and shared across multiple recipes.

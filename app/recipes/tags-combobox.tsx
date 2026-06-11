@@ -17,10 +17,12 @@ export function TagsCombobox({
   name,
   options,
   defaultValue,
+  onSelectionChange,
 }: {
   name: string;
   options: string[];
   defaultValue: string[];
+  onSelectionChange?: (tags: string[]) => void;
 }) {
   const [selected, setSelected] = useState<string[]>(defaultValue);
   const [query, setQuery] = useState("");
@@ -36,13 +38,18 @@ export function TagsCombobox({
     !options.some((o) => o.toLowerCase() === ql) &&
     !selected.some((s) => s.toLowerCase() === ql);
 
+  function commit(next: string[]) {
+    setSelected(next);
+    onSelectionChange?.(next);
+  }
+
   function handleChange(values: string[]) {
-    setSelected(Array.from(new Set(values.map((v) => v.trim()).filter(Boolean))));
+    commit(Array.from(new Set(values.map((v) => v.trim()).filter(Boolean))));
     setQuery("");
   }
 
   function remove(tag: string) {
-    setSelected((s) => s.filter((t) => t !== tag));
+    commit(selected.filter((t) => t !== tag));
   }
 
   return (
@@ -53,25 +60,25 @@ export function TagsCombobox({
       ))}
 
       <Combobox multiple value={selected} onChange={handleChange} immediate>
-        <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-2 py-1.5 focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex flex-wrap items-center gap-2 rounded-field border border-line bg-surface px-2.5 py-2 focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)]">
           {selected.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-ink"
             >
               {tag}
               <button
                 type="button"
                 onClick={() => remove(tag)}
                 aria-label={`Retirer ${tag}`}
-                className="text-zinc-400 hover:text-red-600"
+                className="text-accent-ink/60 transition hover:text-accent-ink"
               >
                 ✕
               </button>
             </span>
           ))}
           <ComboboxInput
-            className="min-w-32 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
+            className="min-w-32 flex-1 bg-transparent px-1 py-1 text-[15px] text-ink outline-none placeholder:text-ink-faint"
             placeholder={selected.length === 0 ? "Ajouter un tag…" : ""}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -81,13 +88,13 @@ export function TagsCombobox({
 
         <ComboboxOptions
           anchor="bottom start"
-          className="z-10 mt-1 w-[var(--input-width)] rounded-md border border-zinc-200 bg-white py-1 shadow-lg empty:invisible dark:border-zinc-700 dark:bg-zinc-900"
+          className="z-10 mt-1 w-[var(--input-width)] rounded-field border border-line bg-surface py-1 shadow-pop empty:invisible"
         >
           {filtered.map((o) => (
             <ComboboxOption
               key={o}
               value={o}
-              className="cursor-pointer px-3 py-1.5 text-sm text-zinc-700 data-[focus]:bg-zinc-100 dark:text-zinc-200 dark:data-[focus]:bg-zinc-800"
+              className="cursor-pointer px-3 py-1.5 text-[14px] text-ink-soft data-[focus]:bg-surface-2"
             >
               {o}
             </ComboboxOption>
@@ -95,9 +102,9 @@ export function TagsCombobox({
           {canCreate && (
             <ComboboxOption
               value={q}
-              className="cursor-pointer px-3 py-1.5 text-sm text-zinc-700 data-[focus]:bg-zinc-100 dark:text-zinc-200 dark:data-[focus]:bg-zinc-800"
+              className="cursor-pointer px-3 py-1.5 text-[14px] text-ink-soft data-[focus]:bg-surface-2"
             >
-              Créer « <span className="font-medium">{q}</span> »
+              Créer « <span className="font-semibold">{q}</span> »
             </ComboboxOption>
           )}
         </ComboboxOptions>

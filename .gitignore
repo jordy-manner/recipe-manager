@@ -47,3 +47,9 @@ next-env.d.ts
 
 # claude code : outillage local, jamais versionné (skills, réglages, etc.)
 .claude/
+
+# dossier de travail design (copier-coller depuis Claude design), non versionné
+.design/
+
+# backlog de travail local, non versionné
+BACKLOG.md

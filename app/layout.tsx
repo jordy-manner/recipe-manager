@@ -1,21 +1,41 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Newsreader, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
+import { TopBar } from "./components/top-bar";
+import { SiteFooter } from "./components/site-footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display serif (titles/hero), with italic for accents like the hero word.
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// UI sans-serif (body, buttons, labels).
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+// Mono for eyebrows, quantities, technical labels.
+const splineMono = Spline_Sans_Mono({
+  variable: "--font-spline-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: { default: "Recipe Manager", template: "%s · Recipe Manager" },
-  description: "Gestion de recettes de cuisine",
+  title: { default: "Marmite. — Recettes maison", template: "%s · Marmite." },
+  description: "Cuisine maison pour tous : recherchez, consultez et créez vos recettes.",
 };
+
+// Mobile browser chrome color (matches the cream page background / sticky bar).
+export const viewport: Viewport = { themeColor: "#fff3e9" };
 
 export default function RootLayout({
   children,
@@ -23,23 +43,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // lang="fr": the app is in French (accessibility/SEO).
-  // suppressHydrationWarning on <html> AND <body>: extensions
-  // (translation, ColorZilla, Grammarly…) rewrite lang / style on <html>
-  // or inject attributes on <body> after server rendering, causing a false
-  // hydration mismatch. The option only acts at the level of the tag where it
-  // is set; children are still checked normally.
+  // suppressHydrationWarning on <html> AND <body>: extensions (translation,
+  // ColorZilla, Grammarly…) rewrite lang / style on <html> or inject attributes
+  // on <body> after server rendering, causing a false hydration mismatch.
   return (
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${hanken.variable} ${splineMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
+        <TopBar />
         <div className="flex-1">{children}</div>
-        {/* Global footer: current year + app version (APP_RELEASE = git tag). */}
-        <footer className="border-t border-zinc-200 px-6 py-4 text-center text-xs text-zinc-500 dark:border-zinc-800">
-          © {new Date().getFullYear()} — Release: {process.env.APP_RELEASE ?? "dev"}
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

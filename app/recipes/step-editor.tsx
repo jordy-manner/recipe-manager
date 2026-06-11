@@ -55,7 +55,7 @@ export function StepEditor({
   }
 
   const btn =
-    "rounded px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700";
+    "rounded px-1.5 py-0.5 text-xs font-semibold text-ink-soft transition hover:bg-surface-2";
 
   return (
     <div className="flex-1">
@@ -85,7 +85,7 @@ export function StepEditor({
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         rows={2}
-        className="w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900"
+        className="w-full resize-y rounded-field border border-line bg-surface px-3.5 py-3 text-[15px] text-ink outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-soft)] placeholder:text-ink-faint"
       />
     </div>
   );

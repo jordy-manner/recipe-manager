@@ -2,6 +2,14 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.0] — 2026-06-11
+
+- Full visual redesign — frozen "Gourmand Arrondi · Terracotta · Magazine" design system: warm cream theme, terracotta accent, Newsreader/Hanken Grotesk/Spline Sans Mono fonts, sticky "Marmite." top bar and footer (Tailwind v4 tokens).
+- Three redesigned screens: home (keyword + by-ingredient search, category chips, time/difficulty filters, Magazine grid), recipe detail (serving stepper that rescales quantities, checkable Markdown steps, nutrition, related recipes), create/edit form (block layout, photo dropzone, live preview, drag-and-drop kept).
+- New recipe fields: categories (explicit many-to-many `RecipeCategory`), difficulty, rating, author, popular, nutrition (kcal/protein/carbs/fat) and photo. Seeded category catalog (Plat de résistance, Entrée, Dessert, Accompagnement, Apéritif, Préparation).
+- Media storage on Cloudinary via a swappable `lib/media.ts` abstraction (signed REST, no SDK), designed to support local storage later. Configured through `CLOUDINARY_*` env vars; degrades to gradient placeholders when unset.
+- Brand icons: SVG favicon, Apple touch icon, Android/PWA web manifest (incl. maskable) and `theme-color`.
+
 ## [v0.1.14] — 2026-06-11
 
 - Switched all code comments and this `CHANGELOG.md` to English (UI text and seed data remain in French).

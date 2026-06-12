@@ -2,6 +2,18 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.17] — 2026-06-12
+
+- **Unified global chrome**: a **breadcrumb** (`Breadcrumb`, server, ≥ sm) is pinned
+  under the `TopBar` on every page (Accueil › … › current), with DB-resolved labels
+  (recipe title, produce name). It reads the path from an `x-pathname` header set by
+  the proxy (`proxy.ts`), and is wrapped in `<Suspense>` so it never blocks the page
+  stream. `<body>` reserves `sm:pt-[108px]` for the TopBar + breadcrumb. Hidden on
+  mobile (the bottom tab bar stays the nav).
+- The **Saisons** nav icon is now `leaf` (was `sun`) on both the desktop TopBar and the
+  mobile tab bar (`calendar` stays for "Menu de la semaine"). "Plus" dropdown width
+  tightened to `min-w-[290px]`.
+
 ## [v0.2.16] — 2026-06-12
 
 - **Editable seasonality (backend)**: seasonal produce now lives in the **DB** as

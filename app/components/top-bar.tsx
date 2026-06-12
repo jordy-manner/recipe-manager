@@ -23,7 +23,7 @@ export function Brand({ size = 21 }: { size?: number }) {
 // destinations live in the "Plus" dropdown (DesktopMoreMenu / nav-data).
 const NAV: { label: string; href: string; icon: IconName }[] = [
   { label: "Recettes", href: "/recettes", icon: "book" },
-  { label: "Saisons", href: "/saisons", icon: "sun" },
+  { label: "Saisons", href: "/saisons", icon: "leaf" },
 ];
 
 const isActive = (pathname: string, href: string): boolean => pathname.startsWith(href);

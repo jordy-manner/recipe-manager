@@ -15,7 +15,7 @@ type Tab = { label: string; href: string; icon: IconName };
 const TABS: Tab[] = [
   { label: "Accueil", href: "/", icon: "home" },
   { label: "Recettes", href: "/recettes", icon: "book" },
-  { label: "Saisons", href: "/saisons", icon: "sun" },
+  { label: "Saisons", href: "/saisons", icon: "leaf" },
 ];
 
 /** Active tab. Order matters: "/recettes/nouvelle" belongs to Créer, not Recettes. */

@@ -49,17 +49,25 @@ const MAINTENANCE_HTML = `<!doctype html>
 </body>
 </html>`;
 
+/** Pass the request through, exposing the pathname to Server Components
+ *  (read via `headers().get("x-pathname")` — used by the Breadcrumb). */
+function passthrough(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export function proxy(request: NextRequest) {
   // Not in maintenance → let it through.
   if (!isTruthy(process.env.APP_MAINTENANCE)) {
-    return NextResponse.next();
+    return passthrough(request);
   }
 
   const bypassSecret = process.env.APP_MAINTENANCE_BYPASS;
 
   // Bypass already granted (cookie set previously).
   if (bypassSecret && request.cookies.get(BYPASS_COOKIE)?.value === bypassSecret) {
-    return NextResponse.next();
+    return passthrough(request);
   }
 
   // Bypass request via ?unlock=<secret> → sets the cookie and cleans up the URL.

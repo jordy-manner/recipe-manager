@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Newsreader, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { TopBar } from "./components/top-bar";
+import { Breadcrumb } from "./components/breadcrumb";
 import { MobileTabBar } from "./components/mobile-tab-bar";
 import { SiteFooter } from "./components/site-footer";
 
@@ -53,13 +55,18 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${newsreader.variable} ${hanken.variable} ${splineMono.variable} h-full`}
     >
-      {/* pt clears the fixed header (68px, all viewports); pb on mobile clears
-          the fixed bottom tab bar (footer included). */}
+      {/* pt clears the fixed chrome: TopBar (68px) everywhere, + the breadcrumb
+          row (40px) on ≥ sm. pb on mobile clears the fixed bottom tab bar. */}
       <body
-        className="flex min-h-full flex-col pt-[68px] pb-[76px] sm:pb-0"
+        className="flex min-h-full flex-col pt-[68px] pb-[76px] sm:pb-0 sm:pt-[108px]"
         suppressHydrationWarning
       >
         <TopBar />
+        {/* Suspense so the breadcrumb's headers()/DB lookup never blocks the page
+            stream; its fixed-height slot is already reserved by the body padding. */}
+        <Suspense fallback={null}>
+          <Breadcrumb />
+        </Suspense>
         <div className="flex-1">{children}</div>
         <SiteFooter />
         <MobileTabBar />

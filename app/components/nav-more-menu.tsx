@@ -92,7 +92,7 @@ export function DesktopMoreMenu() {
           role="menu"
           aria-label="Plus"
           onKeyDown={onMenuKeyDown}
-          className="animate-fade-in absolute left-0 top-full z-50 mt-2 min-w-[312px] rounded-input border border-line bg-surface p-2.5 shadow-card-lg"
+          className="animate-fade-in absolute left-0 top-full z-50 mt-2 min-w-[290px] rounded-input border border-line bg-surface p-2.5 shadow-card-lg"
         >
           {SHEET_GROUPS.map((group) => (
             <div key={group.title} className="flex flex-col gap-0.5 [&:not(:first-child)]:mt-1.5">

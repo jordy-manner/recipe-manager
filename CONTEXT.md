@@ -77,15 +77,17 @@ Shared list helpers (`cardInclude`, `toCard`, `MagazineGrid`, `SectionHead`,
 `EmptyState`, `CardRow`) live in `app/recettes/_shared.tsx`, used by both pages.
 
 **Navigation** is responsive. On **desktop** (≥ sm) the fixed `TopBar` holds icon
-nav links (Recettes `book` / Saisons `sun`), a **"Plus" dropdown** (`DesktopMoreMenu`,
+nav links (Recettes `book` / Saisons `leaf`), a **"Plus" dropdown** (`DesktopMoreMenu`,
 client popover: toggle, click-outside, Escape, ↑/↓, `role="menu"`) and the "Créer
-une recette" CTA; Accueil is reached via the logo. On **mobile** (< sm) the top bar
-collapses to logo + a search icon, and a fixed bottom **tab bar** (`MobileTabBar`,
-client) takes over: Accueil · Recettes · **Créer** (raised center) · Saisons ·
-**Plus**. "Plus" opens a bottom sheet. The secondary destinations (Menu de la
-semaine, Liste de courses, Favoris, Paramètres) are a **single source** shared by
-both — `app/components/nav-data.ts` (`SHEET_GROUPS` / `SHEET_ROUTES`). The `<body>`
-carries a bottom padding on mobile so the fixed bar never hides the footer/content.
+une recette" CTA; Accueil is reached via the logo. Under it, a global **breadcrumb**
+(`Breadcrumb`, server, `≥ sm` only) shows the trail (Accueil › … › current page),
+with DB-resolved labels (recipe title, produce name). On **mobile** (< sm) the top bar
+collapses to logo + a search icon, the breadcrumb is hidden, and a fixed bottom **tab
+bar** (`MobileTabBar`, client) takes over: Accueil · Recettes · **Créer** (raised
+center) · Saisons · **Plus**. "Plus" opens a bottom sheet. The secondary destinations
+(Menu de la semaine, Liste de courses, Favoris, Paramètres) are a **single source**
+shared by both — `app/components/nav-data.ts` (`SHEET_GROUPS` / `SHEET_ROUTES`).
+`Saisons` uses the `leaf` icon on both bars (`calendar` stays for "Menu de la semaine").
 
 **Pinned-chrome invariant (all pages).** Both bars live in the **root layout**
 (`app/layout.tsx`), so on **every** page the header is pinned to the top (`TopBar`,
@@ -93,8 +95,12 @@ carries a bottom padding on mobile so the fixed bar never hides the footer/conte
 (`MobileTabBar`, `fixed inset-x-0 bottom-0 z-40`) — from first paint and throughout
 scroll, on the home, catalogue, recipe detail/edit/create, `/saisons`, and the stub
 pages alike. Keep these two components in the root layout (never per-page) so the
-behaviour stays uniform; because both are `fixed`, the `<body>` reserves space with
-`pt-[68px]` (header height, all viewports) and `pb-[…] sm:pb-0` (mobile tab bar).
+behaviour stays uniform; because the chrome is `fixed`, the `<body>` reserves space
+with `pt-[68px]` (TopBar) `sm:pt-[108px]` (+40px breadcrumb on ≥ sm) and `pb-[…]
+sm:pb-0` (mobile tab bar). The breadcrumb reads the current path from an `x-pathname`
+request header set by the proxy (`proxy.ts`) — so the server `Breadcrumb` can live in
+the root layout and still resolve per-route DB labels (this opts the tree into dynamic
+rendering, which these pages already are).
 
 ## Architecture
 - **Reads** = Server Components querying Prisma directly (`export const dynamic = "force-dynamic"`).
@@ -142,6 +148,7 @@ behaviour stays uniform; because both are `fixed`, the `<body>` reserves space w
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),
+  `breadcrumb` (global server breadcrumb, ≥ sm),
   `coming-soon` (stub page), `loader` (page-transition logo loader), `site-footer`.
 - `app/loading.tsx` — root navigation fallback (Suspense): renders `<Loader>` in the
   content area during route transitions that actually suspend (the nav chrome stays).

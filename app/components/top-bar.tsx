@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./icons";
 import { DesktopMoreMenu } from "./nav-more-menu";
+import { NotifBell } from "./notif-bell";
+import type { Notifications } from "@/lib/notifications";
 
 /** Marmite. wordmark with the accent dot. */
 export function Brand({ size = 21 }: { size?: number }) {
@@ -28,7 +30,7 @@ const NAV: { label: string; href: string; icon: IconName }[] = [
 
 const isActive = (pathname: string, href: string): boolean => pathname.startsWith(href);
 
-export function TopBar() {
+export function TopBar({ notif }: { notif: Notifications }) {
   const pathname = usePathname();
 
   return (
@@ -63,8 +65,8 @@ export function TopBar() {
 
         <div className="flex-1" />
 
-        {/* Mobile: a single search shortcut — full navigation lives in the
-            bottom tab bar (MobileTabBar). */}
+        {/* Mobile: a search shortcut + the notification bell — full navigation
+            lives in the bottom tab bar (MobileTabBar). */}
         <Link
           href="/recettes"
           aria-label="Rechercher une recette"
@@ -72,6 +74,9 @@ export function TopBar() {
         >
           <Icon name="search" size={19} />
         </Link>
+        <div className="shrink-0 sm:hidden">
+          <NotifBell items={notif.items} todoCount={notif.todoCount} placement="mobile" />
+        </div>
 
         {/* Desktop CTA. */}
         <Link
@@ -80,6 +85,11 @@ export function TopBar() {
         >
           <Icon name="plus" size={17} /> Créer une recette
         </Link>
+
+        {/* Desktop notification bell — far right, after the CTA. */}
+        <div className="hidden shrink-0 sm:block">
+          <NotifBell items={notif.items} todoCount={notif.todoCount} placement="desktop" />
+        </div>
       </div>
     </header>
   );

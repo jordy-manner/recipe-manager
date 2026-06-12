@@ -26,7 +26,7 @@ function tabActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function MobileTabBar() {
+export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const closeMore = () => setMoreOpen(false);
@@ -93,7 +93,17 @@ export function MobileTabBar() {
                 moreActive ? "text-accent" : "text-ink-faint hover:text-ink"
               }`}
             >
-              <Icon name="dots" size={22} />
+              <span className="relative">
+                <Icon name="dots" size={22} />
+                {notifCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-1.5 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-white ring-2 ring-bg"
+                  >
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </span>
               <span className="text-[11px] font-semibold">Plus</span>
             </button>
           </li>

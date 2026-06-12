@@ -2,6 +2,24 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.20] — 2026-06-12
+
+- **Notification center ("À traiter")**: a **bell** in the chrome — far right of the
+  desktop `TopBar` (after the "Créer" CTA) and next to the search icon on mobile — with
+  an accent **count badge**. Clicking it opens a panel listing **derived** action signals
+  (no stored table): catalog entries still to complete (ingredients without aisle/default
+  unit, units without abbreviation/kind — same derivation as `/parametres`), stale
+  seasonal data, and recipes without a photo. Each item links straight to the right place
+  (`/parametres/{ingredients,unites,saisons}`, `#row-<id>` highlighting the entry via
+  `:target`); `todo` signals are accent (and counted on the badge), `info` signals are
+  amber (shown, not counted). Empty state "Tout est à jour 🎉" + "Tout voir dans les
+  Paramètres" footer; panel closes on outside-click / Escape, `role="menu"` + aria.
+- **Settings rail dots**: an accent count badge on the Ingrédients / Unités rail items
+  (entries to complete), plus a badge on the mobile **"Plus"** tab.
+- `getNotifications()` (`lib/notifications.ts`, React `cache()`) computes the list +
+  per-section counts once per request, shared by the root layout (bell + Plus badge) and
+  the `/parametres` layout (rail dots). New `bell` icon. No schema change.
+
 ## [v0.2.19] — 2026-06-12
 
 - **On-the-fly catalog creation in the recipe form**: the ingredient / unit /

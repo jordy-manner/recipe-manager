@@ -7,6 +7,7 @@ import { Breadcrumb } from "./components/breadcrumb";
 import { MobileTabBar } from "./components/mobile-tab-bar";
 import { SiteFooter } from "./components/site-footer";
 import { ThemeScript } from "./components/theme-script";
+import { getNotifications } from "@/lib/notifications";
 
 // Display serif (titles/hero), with italic for accents like the hero word.
 const newsreader = Newsreader({
@@ -41,11 +42,14 @@ export const metadata: Metadata = {
 // Mobile browser chrome color (matches the cream page background / sticky bar).
 export const viewport: Viewport = { themeColor: "#fff3e9" };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Derived "À traiter" signals for the bell + the mobile "Plus" badge
+  // (cache()'d, shared with the /parametres rail in the same request).
+  const notif = await getNotifications();
   // lang="fr": the app is in French (accessibility/SEO).
   // suppressHydrationWarning on <html> AND <body>: extensions (translation,
   // ColorZilla, Grammarly…) rewrite lang / style on <html> or inject attributes
@@ -64,7 +68,7 @@ export default function RootLayout({
       >
         {/* Applies the saved theme/accent before paint (no light-theme flash). */}
         <ThemeScript />
-        <TopBar />
+        <TopBar notif={notif} />
         {/* Suspense so the breadcrumb's headers()/DB lookup never blocks the page
             stream; its fixed-height slot is already reserved by the body padding. */}
         <Suspense fallback={null}>
@@ -72,7 +76,7 @@ export default function RootLayout({
         </Suspense>
         <div className="flex-1">{children}</div>
         <SiteFooter />
-        <MobileTabBar />
+        <MobileTabBar notifCount={notif.todoCount} />
       </body>
     </html>
   );

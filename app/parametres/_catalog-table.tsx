@@ -428,8 +428,9 @@ export function CatalogTable({
             return (
               <div
                 key={r.id}
+                id={`row-${r.id}`}
                 className={
-                  "grid items-center gap-3 border-b border-line-soft px-4 py-2 last:border-b-0 " +
+                  "grid scroll-mt-[128px] items-center gap-3 border-b border-line-soft px-4 py-2 transition last:border-b-0 target:bg-accent-soft/60 target:ring-2 target:ring-inset target:ring-accent " +
                   (r._draft ? "bg-accent-soft/30 " : "") +
                   (todo ? "bg-amber-soft/30" : "")
                 }

@@ -107,15 +107,29 @@ Shared list helpers (`cardInclude`, `toCard`, `MagazineGrid`, `SectionHead`,
 **Navigation** is responsive. On **desktop** (≥ sm) the fixed `TopBar` holds icon
 nav links (Recettes `book` / Saisons `leaf`), a **"Plus" dropdown** (`DesktopMoreMenu`,
 client popover: toggle, click-outside, Escape, ↑/↓, `role="menu"`) and the "Créer
-une recette" CTA; Accueil is reached via the logo. Under it, a global **breadcrumb**
+une recette" CTA, and — at the **far right** — a **notification bell**
+(`NotifBell`). Accueil is reached via the logo. Under it, a global **breadcrumb**
 (`Breadcrumb`, server, `≥ sm` only) shows the trail (Accueil › … › current page),
 with DB-resolved labels (recipe title, produce name). On **mobile** (< sm) the top bar
-collapses to logo + a search icon, the breadcrumb is hidden, and a fixed bottom **tab
-bar** (`MobileTabBar`, client) takes over: Accueil · Recettes · **Créer** (raised
-center) · Saisons · **Plus**. "Plus" opens a bottom sheet. The secondary destinations
+collapses to logo + a search icon + the **notification bell**, the breadcrumb is hidden,
+and a fixed bottom **tab bar** (`MobileTabBar`, client) takes over: Accueil · Recettes ·
+**Créer** (raised center) · Saisons · **Plus** (with a count badge when there are items
+to handle). "Plus" opens a bottom sheet. The secondary destinations
 (Menu de la semaine, Liste de courses, Favoris, Paramètres) are a **single source**
 shared by both — `app/components/nav-data.ts` (`SHEET_GROUPS` / `SHEET_ROUTES`).
 `Saisons` uses the `leaf` icon on both bars (`calendar` stays for "Menu de la semaine").
+
+**Notification center ("À traiter").** The bell opens a panel listing **derived**
+action signals (no stored table): catalog entries still to complete (ingredients
+without aisle/default unit, units without abbreviation/kind — same derivation as
+`/parametres`, lot 2), stale seasonal data, and recipes without a photo. Each item is a
+`{ kind: 'todo'|'info', icon, label, sub, href }` linking straight to the right place
+(`/parametres/{ingredients,unites,saisons}`, with a `#row-<id>` anchor that highlights
+the entry via `:target`). The bell **badge counts the `todo` signals only**; `info`
+signals (amber) are shown but not counted. `getNotifications()` (`lib/notifications.ts`,
+wrapped in React `cache()`) computes the list + per-section counts once per request; the
+root layout passes them to the bell + the mobile "Plus" badge, and the `/parametres`
+layout reuses the same counts for the **rail dots** (Ingrédients / Unités).
 
 **Pinned-chrome invariant (all pages).** Both bars live in the **root layout**
 (`app/layout.tsx`), so on **every** page the header is pinned to the top (`TopBar`,
@@ -198,8 +212,10 @@ rendering, which these pages already are).
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),
-  `breadcrumb` (global server breadcrumb, ≥ sm),
+  `breadcrumb` (global server breadcrumb, ≥ sm), `notif-bell` (notification bell + panel),
   `coming-soon` (stub page), `loader` (page-transition logo loader), `site-footer`.
+- `lib/notifications.ts` — `getNotifications()` (cache()'d): derived "À traiter" signals +
+  per-section counts, consumed by the bell, the mobile "Plus" badge, and the settings rail.
 - `app/loading.tsx` — root navigation fallback (Suspense): renders `<Loader>` in the
   content area during route transitions that actually suspend (the nav chrome stays).
 - `app/layout.tsx` — fonts + TopBar + Footer. `app/globals.css` — design tokens.

@@ -7,9 +7,23 @@ import { SETTINGS_NAV } from "./_nav";
 
 // Sticky side rail: grouped sections (Préférences / Catalogues / Données). The
 // active item (matched on the current path) is highlighted with the accent.
-export function SettingsRail({ release }: { release?: string }) {
+// `sectionCounts` drives an accent count badge on the catalog sections with
+// entries still "À compléter".
+export function SettingsRail({
+  release,
+  sectionCounts,
+}: {
+  release?: string;
+  sectionCounts?: { ingredients: number; unites: number };
+}) {
   const pathname = usePathname();
   const active = pathname.split("/")[2] ?? "";
+  const countFor = (slug: string): number =>
+    slug === "ingredients"
+      ? (sectionCounts?.ingredients ?? 0)
+      : slug === "unites"
+        ? (sectionCounts?.unites ?? 0)
+        : 0;
 
   return (
     <aside className="sm:sticky sm:top-[124px] sm:self-start">
@@ -21,6 +35,7 @@ export function SettingsRail({ release }: { release?: string }) {
             </span>
             {g.items.map((it) => {
               const on = it.slug === active;
+              const count = countFor(it.slug);
               return (
                 <Link
                   key={it.slug}
@@ -34,7 +49,15 @@ export function SettingsRail({ release }: { release?: string }) {
                   }
                 >
                   <Icon name={it.icon} size={18} className="shrink-0" />
-                  {it.label}
+                  <span className="flex-1">{it.label}</span>
+                  {count > 0 && (
+                    <span
+                      className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white"
+                      title={`${count} à compléter`}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </Link>
               );
             })}

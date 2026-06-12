@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import type { RecipeCardData } from "@/app/components/recipe-card";
 import { cardInclude, toCard, type CardRow } from "@/app/recettes/_shared";
 import { produceImage } from "@/lib/pexels";
-import { PRODUCE } from "@/lib/produce";
+import { PRODUCE_FALLBACK, toProduce } from "@/lib/produce";
 import { getRecipeActiveMonths, type SeasonMode } from "@/lib/seasonality";
 import {
   ingredientMatches,
@@ -27,9 +27,20 @@ export {
 } from "@/lib/seasons-data";
 export type { SeasonStatus, CarbonTier } from "@/lib/seasons-data";
 
-/** The committed seasonal produce dataset (lib/produce.ts). No external API. */
+/**
+ * Seasonal produce, from the DB (Ingredient rows with a `category`). Falls back
+ * to the committed snapshot when nothing is seeded yet (safe pre-seed rollout).
+ */
 export async function getProduce(): Promise<Produce[]> {
-  return PRODUCE;
+  const rows = await prisma.ingredient.findMany({
+    where: { category: { not: null } },
+    select: { name: true, slug: true, category: true, months: true, ecv: true },
+    orderBy: { name: "asc" },
+  });
+  if (!rows.length) return PRODUCE_FALLBACK;
+  return rows
+    .map((r) => toProduce({ ...r, category: r.category! }))
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
 
 // --- Recipe ↔ produce matching (accent-insensitive, plural-tolerant) ---

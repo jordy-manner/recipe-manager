@@ -78,11 +78,33 @@ model Step {
   @@index([recipeId])
 }
 
+// Seasonal-produce category. An ingredient with a category is shown on /saisons.
+// Values are unaccented (Prisma enum identifiers); the UI maps them to French.
+enum ProduceCategory {
+  fruits
+  legumes
+  herbes
+  legumineuses
+}
+
 // Catalog of reusable ingredients (e.g. "farine", "œuf"). Unique name.
+// An ingredient that is also a seasonal produce carries optional season fields:
+// when `category` is set it appears on /saisons (slug = URL key, months 1–12,
+// ecv = ADEME Agribalyse carbon footprint kg CO2e/kg). Editable from the app.
 model Ingredient {
   id                String             @id @default(cuid())
   name              String             @unique
   recipeIngredients RecipeIngredient[]
+
+  // Seasonality (null/empty for non-produce ingredients like salt, flour).
+  slug            String?          @unique
+  category        ProduceCategory?
+  months          Int[]            @default([])
+  ecv             Float? // kg CO2e / kg
+  ecvSource       String? // "agribalyse" | "manual"
+  seasonUpdatedAt DateTime?
+
+  @@index([category])
 }
 
 // Catalog of reusable units of measure (e.g. "g", "kg", "ml", "pincée", "unité").

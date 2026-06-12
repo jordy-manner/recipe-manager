@@ -1,14 +1,58 @@
-// Seasonal produce dataset (fruits, vegetables, herbs, pulses) for /saisons.
-// Committed, Zod-validated, no external runtime API: lib/data/seasonality.json
-// (sources: Greenpeace, Interfel, chambres d'agriculture — see its _meta).
-// Carbon footprint (ecv, kg CO2e/kg) comes from a committed ADEME Agribalyse
-// snapshot (lib/data/carbon-ademe.json), merged by slug; items without an
-// Agribalyse match keep ecv: null and their carbon UI stays hidden.
+// Seasonal produce mapping + committed fallback. The source of truth at runtime
+// is the DB: seasonal data lives on Ingredient (slug/category/months/ecv), read
+// by getProduce() in lib/seasons.ts. This module provides:
+//  - the DB-row → Produce mapper (toProduce),
+//  - the category enum ↔ French-label maps,
+//  - PRODUCE_FALLBACK: the committed seasonality.json + carbon-ademe.json, used
+//    only when the DB has no seasonal ingredient yet (safe pre-seed rollout) and
+//    as the source the CLI seeds from.
 
 import { z } from "zod";
 import seasonalityJson from "@/lib/data/seasonality.json";
 import carbonJson from "@/lib/data/carbon-ademe.json";
+import { slugify } from "@/lib/recipes";
 import { hueForSlug, type Produce, type ProduceCategory } from "@/lib/seasons-data";
+
+/** DB enum values (unaccented Prisma identifiers). */
+export type DbCategory = "fruits" | "legumes" | "herbes" | "legumineuses";
+
+export const CATEGORY_LABEL: Record<DbCategory, ProduceCategory> = {
+  fruits: "fruits",
+  legumes: "légumes",
+  herbes: "herbes",
+  legumineuses: "légumineuses",
+};
+
+export const CATEGORY_ENUM: Record<ProduceCategory, DbCategory> = {
+  fruits: "fruits",
+  légumes: "legumes",
+  herbes: "herbes",
+  légumineuses: "legumineuses",
+};
+
+const cleanMonths = (m: number[]): number[] =>
+  [...new Set(m.filter((n) => Number.isInteger(n) && n >= 1 && n <= 12))].sort((a, b) => a - b);
+
+/** A seasonal Ingredient row (with a non-null category) → Produce. */
+export function toProduce(row: {
+  name: string;
+  slug: string | null;
+  category: DbCategory;
+  months: number[];
+  ecv: number | null;
+}): Produce {
+  const slug = row.slug ?? slugify(row.name);
+  return {
+    name: row.name,
+    slug,
+    months: cleanMonths(row.months),
+    ecv: row.ecv,
+    category: CATEGORY_LABEL[row.category],
+    hue: hueForSlug(slug),
+  };
+}
+
+// --- Committed fallback (seasonality.json + carbon-ademe.json) ---
 
 const ItemSchema = z.object({
   slug: z.string().min(1),
@@ -16,32 +60,21 @@ const ItemSchema = z.object({
   category: z.enum(["fruits", "legumes", "herbes", "legumineuses"]),
   months: z.array(z.number().int().min(1).max(12)).min(1),
 });
-
 const FileSchema = z.object({ items: z.array(ItemSchema).min(1) });
-
 const CarbonSchema = z.object({ ecv: z.record(z.string(), z.number().nonnegative()) });
-// Carbon footprint per produce slug (kg CO2e/kg), from the committed ADEME snapshot.
+
 const CARBON = CarbonSchema.parse(carbonJson).ecv;
-
-// Source categories are unaccented; map them to the displayed (accented) ones.
-const CATEGORY: Record<z.infer<typeof ItemSchema>["category"], ProduceCategory> = {
-  fruits: "fruits",
-  legumes: "légumes",
-  herbes: "herbes",
-  legumineuses: "légumineuses",
-};
-
-// Validated at module load: a malformed data file fails fast on the server.
 const { items } = FileSchema.parse(seasonalityJson);
 
-/** All seasonal produce, sorted by display name (French collation). */
-export const PRODUCE: Produce[] = items
-  .map((it): Produce => ({
-    name: it.label,
-    slug: it.slug,
-    months: [...new Set(it.months.filter((m) => m >= 1 && m <= 12))].sort((a, b) => a - b),
-    ecv: CARBON[it.slug] ?? null,
-    category: CATEGORY[it.category],
-    hue: hueForSlug(it.slug),
-  }))
+/** Committed seasonal produce, used when the DB isn't seeded yet (and by the CLI). */
+export const PRODUCE_FALLBACK: Produce[] = items
+  .map((it) =>
+    toProduce({
+      name: it.label,
+      slug: it.slug,
+      category: it.category,
+      months: it.months,
+      ecv: CARBON[it.slug] ?? null,
+    }),
+  )
   .sort((a, b) => a.name.localeCompare(b.name, "fr"));

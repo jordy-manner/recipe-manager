@@ -33,7 +33,12 @@ All many-to-many relations use **explicit join tables** (project convention).
   `seasonMode` (enum **SeasonMode** `AUTO | MANUAL | ALWAYS`, default `AUTO`) +
   `seasonMonths` (`Int[]`, the active months 1–12, used only in MANUAL mode).
 - **Step** — ordered prep steps: `content` (Markdown) + `order`, FK to Recipe.
-- **Ingredient** / **Unit** — reusable catalogs (`name` unique).
+- **Ingredient** / **Unit** — reusable catalogs (`name` unique). An ingredient is
+  also a **seasonal produce** when it carries season fields: `slug?` (unique, URL key
+  for `/saisons`), `category?` (enum `ProduceCategory` = fruits/legumes/herbes/
+  legumineuses; `null` = ordinary ingredient like salt/flour), `months Int[]`,
+  `ecv?` + `ecvSource?` (ADEME Agribalyse carbon), `seasonUpdatedAt?`. Editable from
+  the app (Server Actions) and a CLI — this is the source of truth for `/saisons`.
 - **RecipeIngredient** — join carrying `quantity?` (Float), `unitId?`, `position`,
   `isPrimary` (bool, default false): "main" ingredients drive AUTO seasonality.
 - **Utensil** + **RecipeUtensil** — join carrying `quantity?` (Int), `position`.
@@ -119,13 +124,18 @@ behaviour stays uniform; because both are `fixed`, the `<body>` reserves space w
 - `lib/seasonality.ts` — `getRecipeActiveMonths(recipe, produce)`: pure resolution of
   a recipe's in-season months (AUTO/MANUAL/ALWAYS). Ingredient↔produce name matching
   (`ingredientMatches`) lives in `lib/seasons-data.ts` (pure, client-safe).
-- `lib/produce.ts` — loads `lib/data/seasonality.json` (Zod-validated) into the
-  `Produce[]` used by `/saisons`. Categories: fruits, légumes, légumineuses, herbes.
-  Merges the carbon footprint (`ecv`) by slug from a committed ADEME **Agribalyse**
-  snapshot (`lib/data/carbon-ademe.json`, ~99 items, raw/fresh foods); items without
-  an Agribalyse match keep `ecv: null`.
-- `lib/seasons.ts` — `getProduce()` (returns the committed dataset) + recipe↔produce
-  matching for `/saisons`.
+- `lib/produce.ts` — DB-row → `Produce` mapper + category enum↔French-label maps +
+  `PRODUCE_FALLBACK` (the committed `lib/data/seasonality.json` + `carbon-ademe.json`,
+  used only before the DB is seeded, and as the CLI seed source).
+- `lib/seasons.ts` — `getProduce()` reads the **DB** (`Ingredient` rows with a
+  `category`), falling back to `PRODUCE_FALLBACK` when none; + recipe↔produce matching.
+- `lib/produce-actions.ts` — Server Actions to manage seasonal produce from the app:
+  `listProduce`, `upsertProduce`, `removeProduce`, `suggestEcv` (Agribalyse pre-fill).
+  This is the contract consumed by the `/parametres` produce editor.
+- `lib/agribalyse.ts` — ADEME Agribalyse carbon lookup (`fetchAgribalyseEcv`), used by
+  the upsert action + the CLI; admin-time only (never on `/saisons` reads).
+- `scripts/seasonality.ts` — CLI (`npm run seasonality -- <cmd>`): `import` (seed from
+  the JSON), `refresh-carbon` (Agribalyse), `set <slug>` (edit one), `export` (backup).
 - `lib/media.ts` — media abstraction.
 - `app/recettes/` — `page.tsx` (list/search), `home-screen` (search UI), `recipe-detail`,
   `recipe-form` (+ `step-editor`, `tags-combobox`), `actions.ts`, `[slug]/`, `nouvelle/`.
@@ -169,18 +179,23 @@ Rule: **use theme tokens only**, no hardcoded values. Home recipe layout = **Mag
 ## Environment variables
 - `DATABASE_URL` — Neon Postgres, **pooled** endpoint (secret, `.env.local` / Vercel);
   used by the runtime app via the Neon adapter (`lib/prisma.ts`).
-- `DATABASE_URL_UNPOOLED` — Neon **direct/unpooled** endpoint (same host without
-  `-pooler`). Used by the **Prisma CLI for migrations** (`prisma.config.ts`): advisory
-  locks time out through the pooler (`P1002`). Falls back to `DATABASE_URL` if unset.
-  Provided by the Neon Vercel integration; also add it to `.env.local`.
+- `DATABASE_URL_UNPOOLED` — Neon **direct/unpooled** endpoint. ⚠️ It MUST be the direct
+  connection of the **same Neon branch** as `DATABASE_URL` (i.e. literally that host
+  with `-pooler` removed) — NOT another branch. Used by the **Prisma CLI for migrations**
+  (`prisma.config.ts`): advisory locks time out through the pooler (`P1002`). Falls
+  back to `DATABASE_URL` if unset. Add it to `.env.local` (dev branch) and Vercel
+  (prod branch). If it points to a different branch, migrations land on the wrong DB.
 - `APP_RELEASE` — current git tag, shown in the footer (committed in `.env`).
 - `APP_MAINTENANCE` / `APP_MAINTENANCE_BYPASS` — maintenance mode (`proxy.ts`).
 - `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` (+ optional
   `CLOUDINARY_FOLDER`) — photo uploads. Unset → gradient placeholders, upload disabled.
 - `PEXELS_API_KEY` — seasonal calendar produce images (`lib/pexels.ts`, server-only,
   cached). Unset → gradient placeholders. The seasonal produce itself (fruits,
-  vegetables, pulses, herbs) is a committed, Zod-validated dataset
-  (`lib/data/seasonality.json` via `lib/produce.ts`) — no external runtime API. The
-  carbon footprint (`ecv`) is merged from a committed ADEME **Agribalyse** snapshot
-  (`lib/data/carbon-ademe.json`, ~99 items); produce without an Agribalyse match keeps
-  `ecv: null` and its carbon UI stays hidden.
+  vegetables, pulses, herbs) is stored in the **DB** (Ingredient season fields, editable
+  from the app/CLI); `lib/data/seasonality.json` + `carbon-ademe.json` are the committed
+  **seed source + fallback** (no external runtime API on reads). Carbon (`ecv`) comes
+  from ADEME **Agribalyse** (`lib/agribalyse.ts`): seeded/refreshed into the DB by the
+  CLI and pre-filled on edit; produce without an Agribalyse match keeps `ecv: null` and
+  its carbon UI stays hidden. **Prod rollout**: after the migration deploys, run
+  `npm run seasonality -- import` once against the prod DB to seed it (until then,
+  `/saisons` serves the committed fallback).

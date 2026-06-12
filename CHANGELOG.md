@@ -2,6 +2,19 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.16] — 2026-06-12
+
+- **Editable seasonality (backend)**: seasonal produce now lives in the **DB** as
+  fields on `Ingredient` (`slug`, `category` enum `ProduceCategory`, `months`, `ecv`,
+  `ecvSource`, `seasonUpdatedAt`) — a produce is an ingredient with a category.
+  Migration `seasonal_ingredient`. `getProduce()` reads the DB (falling back to the
+  committed `seasonality.json`/`carbon-ademe.json` until seeded). Server Actions
+  (`lib/produce-actions.ts`: `listProduce` / `upsertProduce` / `removeProduce` /
+  `suggestEcv`) are the contract for the upcoming `/parametres` produce editor; carbon
+  is pre-filled from ADEME **Agribalyse** (`lib/agribalyse.ts`). New CLI
+  `npm run seasonality -- <import|refresh-carbon|set|export>`. Recipe↔produce matching
+  unchanged (fuzzy by name). The committed JSON is now the seed source + fallback.
+
 ## [v0.2.15] — 2026-06-12
 
 - **Desktop nav revamp**: the secondary destinations (Menu de la semaine, Liste de

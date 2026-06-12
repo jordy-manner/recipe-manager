@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
+    "seasonality": "tsx scripts/seasonality.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

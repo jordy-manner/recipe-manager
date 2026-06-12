@@ -30,6 +30,21 @@ const paths: Record<string, ReactNode> = {
   back: <path d="M19 12H5M12 19l-7-7 7-7" />,
   arrow: <path d="M5 12h14M12 5l7 7-7 7" />,
   chevron: <path d="m9 18 6-6-6-6" />,
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  rows: (
+    <>
+      <rect x="3" y="5" width="18" height="5" rx="1.5" />
+      <rect x="3" y="14" width="18" height="5" rx="1.5" />
+    </>
+  ),
+  shelf: (
+    <>
+      <path d="M3 7h18M3 17h18" />
+      <rect x="5.5" y="9" width="3.5" height="6" rx="0.8" />
+      <rect x="11" y="9" width="3.5" height="6" rx="0.8" />
+      <rect x="16.5" y="9" width="2" height="6" rx="0.8" />
+    </>
+  ),
   check: <path d="M20 6 9 17l-5-5" />,
   x: <path d="M18 6 6 18M6 6l12 12" />,
   star: <path d="M12 2.5l2.9 5.88 6.5.95-4.7 4.58 1.1 6.47L12 17.9 6.2 20.96l1.1-6.47-4.7-4.58 6.5-.95L12 2.5Z" />,

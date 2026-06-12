@@ -69,12 +69,25 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
 - `/recettes/[slug]` — recipe detail (lookup by `slug`).
 - `/recettes/[slug]/modifier` — edit.
 - `/recettes/nouvelle` — create.
-- `/saisons` — **seasonal calendar**: produce in season by month (band + `?m=`),
-  category/sort filters, seasonality search, and matched seasonal recipes. A recipe
-  matches month *m* when `getRecipeActiveMonths` (`lib/seasonality.ts`) includes it:
-  `ALWAYS` → all year; `MANUAL` → its `seasonMonths`; `AUTO` → the union of the
-  in-season months of its **primary** ingredients (matched against the produce
-  dataset, no external runtime API).
+- `/saisons` — **seasonal calendar** (client-driven `SeasonsBrowser`, state synced
+  to the URL): **multi-month selection** (`?m=6,7,8`, default = current month, an
+  explicit empty set is `?m=none`) — a product shows when its months intersect the
+  selection. Month **pills** + **shortcuts** (Ce mois-ci / Toute l'année / the four
+  seasons / Tout effacer) live in a **removable Filters panel** (closed by default,
+  with a summary + active badge; sticky on mobile). A **name search** filters the
+  grid live; category **counts** derive from the current selection. A **view
+  selector** switches the list between **Grille** / **Liste dense** / **Étagères**
+  (default; one horizontal slider per category, arrows + swipe). Titles are dynamic
+  (`en {mois}` / a season's own phrasing `au printemps`…`en hiver` / `sur N mois` /
+  `cette année`). On mobile, shortcuts and categories become **custom dropdowns**
+  (`Dropdown`, icons/counts/colored selection — a native `<select>` can't).
+  `?cat=`, `?sort=` (A→Z / carbone) and `?view=` are also shareable. Matched
+  seasonal recipes (recipes whose active months intersect the selection, ranked by
+  the number of selected products they use) are computed client-side from data
+  pre-resolved server-side (`seasonalRecipesData`). A recipe's active months come
+  from `getRecipeActiveMonths` (`lib/seasonality.ts`): `ALWAYS` → all year;
+  `MANUAL` → its `seasonMonths`; `AUTO` → the union of the in-season months of its
+  **primary** ingredients (matched against the produce dataset, no runtime API).
 - `/saisons/[slug]` — product detail: a full page that, when opened from `/saisons`,
   is shown as a **drawer** via parallel + intercepting routes (`@modal` slot +
   `@modal/(.)[slug]`). Direct visit / refresh / share renders the full page.

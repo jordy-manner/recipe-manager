@@ -197,6 +197,15 @@ body {
   pointer-events: none;
 }
 
+/* Hide the scrollbar while keeping scroll/swipe (seasonal "shelf" sliders). */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Native select with the design's chevron. */
 .select-chevron {
   appearance: none;

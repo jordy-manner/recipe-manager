@@ -27,6 +27,12 @@ export const MONTHS = [
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ] as const;
 export const MONTHS_SHORT = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"] as const;
+export const MONTHS_ABBR = [
+  "Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
+  "Juil", "Août", "Sep", "Oct", "Nov", "Déc",
+] as const;
+
+export const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 // --- Pure season logic (no DB) — safe to import from Client Components ---
 
@@ -35,6 +41,26 @@ export function resolveMonth(raw: string | undefined): number {
   const n = Number(raw);
   if (Number.isInteger(n) && n >= 1 && n <= 12) return n;
   return new Date().getMonth() + 1;
+}
+
+/**
+ * Resolves a month *set* from `?m=6,7,8` (comma-separated, 1–12, de-duped and
+ * sorted). Defaults to the current month when empty/invalid. An explicit empty
+ * selection (no valid month) is allowed via `allowEmpty` for the "Tout effacer"
+ * shareable state.
+ */
+export function resolveMonths(raw: string | undefined, allowEmpty = false): number[] {
+  if (raw === undefined) return [new Date().getMonth() + 1];
+  const parsed = [
+    ...new Set(
+      raw
+        .split(",")
+        .map((p) => Number(p.trim()))
+        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12),
+    ),
+  ].sort((a, b) => a - b);
+  if (parsed.length) return parsed;
+  return allowEmpty ? [] : [new Date().getMonth() + 1];
 }
 
 export type SeasonStatus = "pleine" | "début" | "fin" | "année" | "hors";

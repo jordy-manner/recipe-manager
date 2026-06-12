@@ -20,6 +20,7 @@ import {
 // can be imported from Client Components too. Re-exported here for convenience.
 export {
   resolveMonth,
+  resolveMonths,
   seasonState,
   carbonTier,
   SEASON_LABELS,
@@ -57,48 +58,42 @@ const recipeInclude = {
   recipeIngredients: { include: { ingredient: { select: { name: true } } } },
 } as const;
 
-/** Distinct primary products a recipe uses that are in season this month. */
-function primarySeasonalCount(
-  recipe: RecipeWithIngredients,
-  produce: Produce[],
-  month: number,
-): number {
-  const matched = new Set<string>();
+/** Distinct primary produce slugs a recipe uses (any month). */
+function primaryProduceSlugs(recipe: RecipeWithIngredients, produce: Produce[]): string[] {
+  const slugs = new Set<string>();
   for (const ri of recipe.recipeIngredients) {
     if (!ri.isPrimary) continue;
     for (const p of produce) {
-      if (p.months.includes(month) && ingredientMatches(ri.ingredient.name, p)) {
-        matched.add(p.slug);
-      }
+      if (ingredientMatches(ri.ingredient.name, p)) slugs.add(p.slug);
     }
   }
-  return matched.size;
+  return [...slugs];
 }
 
-export type SeasonalRecipe = { recipe: RecipeCardData; count: number };
+/** A recipe with everything the client needs to match it to a month selection. */
+export type SeasonalRecipeData = {
+  recipe: RecipeCardData;
+  activeMonths: number[]; // getRecipeActiveMonths (AUTO/MANUAL/ALWAYS)
+  slugs: string[]; // primary produce slugs it uses
+};
 
 /**
- * Recipes whose active months (getRecipeActiveMonths) include this month.
- * Sorted by relevance (primary products in season this month) then recency.
+ * All recipes pre-resolved for client-side, multi-month seasonal matching: the
+ * card data, the recipe's active months, and the primary produce slugs it uses.
+ * The page fetches this once; the client filters by the (interactive) month
+ * selection without further round-trips.
  */
-export async function seasonalRecipes(
-  month: number,
-  produce: Produce[],
-): Promise<SeasonalRecipe[]> {
+export async function seasonalRecipesData(produce: Produce[]): Promise<SeasonalRecipeData[]> {
   const rows = (await prisma.recipe.findMany({
     orderBy: { createdAt: "desc" },
     include: recipeInclude,
   })) as unknown as RecipeWithIngredients[];
 
-  return rows
-    .map((r) => ({
-      recipe: toCard(r),
-      active: getRecipeActiveMonths(r, produce),
-      count: primarySeasonalCount(r, produce, month),
-    }))
-    .filter((x) => x.active.includes(month))
-    .sort((a, b) => b.count - a.count)
-    .map(({ recipe, count }) => ({ recipe, count }));
+  return rows.map((r) => ({
+    recipe: toCard(r),
+    activeMonths: getRecipeActiveMonths(r, produce),
+    slugs: primaryProduceSlugs(r, produce),
+  }));
 }
 
 /** Recipes that use a given product (any month). */

@@ -2,6 +2,33 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.23] — 2026-06-12
+
+- **`/saisons` rework** (design handoff `saisons_rework`): the page becomes a
+  client-driven `SeasonsBrowser` whose state is mirrored into the URL (shareable,
+  back/forward-able), replacing the server-round-trip month band.
+  - **Multi-month selection** (`?m=6,7,8`; default = current month; explicit empty
+    set = `?m=none`): a product is listed when its months intersect the selection.
+    Checkable month **pills** (current month dotted) + **shortcuts** — Ce mois-ci,
+    Toute l'année, the four seasons, Tout effacer.
+  - **Removable Filters panel** (closed by default, summary + active-count badge,
+    sticky on mobile) now holds the month selector, category chips and the sort,
+    bringing the list right under the search. The standalone month band is gone.
+  - **Live name search** filters the grid (accent-insensitive); category **counts**
+    and the list derive from the current selection (out-of-selection items hidden).
+  - **View selector** — **Grille** / **Liste dense** / **Étagères** (default):
+    shelves are one horizontal slider per category (arrow buttons + swipe /
+    scroll-snap, empty categories hidden); dense rows show thumbnail + state +
+    carbon + 12-month bar.
+  - **Dynamic titles**: `en {mois}` for one month, a season's own phrasing
+    (**au printemps**, **en été**, **en automne**, **en hiver**) when the selection
+    matches a season, `sur N mois`, or `cette année`.
+  - **Mobile**: months in 4 columns; shortcuts and categories become **custom
+    dropdowns** (icons, counts, colored selection) since a native `<select>` can't.
+  - Seasonal recipes are now matched client-side against the multi-month selection
+    from data pre-resolved on the server (`seasonalRecipesData`), with no
+    per-interaction round-trip.
+
 ## [v0.2.22] — 2026-06-12
 
 - **Mobile nav tweaks** (design review): the mobile (`< sm`) top bar is now the

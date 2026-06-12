@@ -116,10 +116,11 @@ une recette" CTA, and — at the **far right** — a **notification bell**
 (`NotifBell`). Accueil is reached via the logo. Under it, a global **breadcrumb**
 (`Breadcrumb`, server, `≥ sm` only) shows the trail (Accueil › … › current page),
 with DB-resolved labels (recipe title, produce name). On **mobile** (< sm) the top bar
-collapses to logo + a search icon + the **notification bell**, the breadcrumb is hidden,
-and a fixed bottom **tab bar** (`MobileTabBar`, client) takes over: Accueil · Recettes ·
-**Créer** (raised center) · Saisons · **Plus** (with a count badge when there are items
-to handle). "Plus" opens a bottom sheet. The secondary destinations
+collapses to the **logo only** (search is reached via the Recettes tab; the bell stays
+desktop-only), the breadcrumb is hidden, and a fixed bottom **tab bar** (`MobileTabBar`,
+client) takes over: Accueil · Recettes · **Créer** (raised center) · Saisons · **Plus**
+(with a count badge when there are items to handle). "Plus" opens a bottom sheet whose
+**Paramètres** entry carries the same count badge. The secondary destinations
 (Menu de la semaine, Liste de courses, Favoris, Paramètres) are a **single source**
 shared by both — `app/components/nav-data.ts` (`SHEET_GROUPS` / `SHEET_ROUTES`).
 `Saisons` uses the `leaf` icon on both bars (`calendar` stays for "Menu de la semaine").

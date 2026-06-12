@@ -142,20 +142,38 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
                   <p className="px-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-ink-faint">
                     {group.title}
                   </p>
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeMore}
-                      className="flex min-h-[56px] items-center gap-3.5 rounded-input px-3 text-ink-soft transition hover:bg-surface-muted hover:text-ink"
-                    >
-                      <span className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px] bg-surface-muted text-ink-soft">
-                        <Icon name={item.icon} size={20} />
-                      </span>
-                      <span className="flex-1 text-[15.5px] font-semibold">{item.label}</span>
-                      <Icon name="chevron" size={18} className="text-ink-faint" />
-                    </Link>
-                  ))}
+                  {group.items.map((item) => {
+                    // Count badge on the Paramètres entry — same source as the
+                    // desktop bell + the "Plus" tab badge (notif todoCount).
+                    const showBadge = item.href === "/parametres" && notifCount > 0;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={closeMore}
+                        aria-label={
+                          showBadge
+                            ? `${item.label} (${notifCount} à compléter)`
+                            : undefined
+                        }
+                        className="flex min-h-[56px] items-center gap-3.5 rounded-input px-3 text-ink-soft transition hover:bg-surface-muted hover:text-ink"
+                      >
+                        <span className="relative grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px] bg-surface-muted text-ink-soft">
+                          <Icon name={item.icon} size={20} />
+                          {showBadge && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-white ring-2 ring-bg"
+                            >
+                              {notifCount > 9 ? "9+" : notifCount}
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex-1 text-[15.5px] font-semibold">{item.label}</span>
+                        <Icon name="chevron" size={18} className="text-ink-faint" />
+                      </Link>
+                    );
+                  })}
                 </div>
               ))}
             </div>

@@ -65,18 +65,8 @@ export function TopBar({ notif }: { notif: Notifications }) {
 
         <div className="flex-1" />
 
-        {/* Mobile: a search shortcut + the notification bell — full navigation
-            lives in the bottom tab bar (MobileTabBar). */}
-        <Link
-          href="/recettes"
-          aria-label="Rechercher une recette"
-          className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full border border-line bg-surface text-ink-soft transition hover:border-ink-faint hover:text-ink sm:hidden"
-        >
-          <Icon name="search" size={19} />
-        </Link>
-        <div className="shrink-0 sm:hidden">
-          <NotifBell items={notif.items} todoCount={notif.todoCount} placement="mobile" />
-        </div>
+        {/* Mobile: logo only (full navigation lives in the bottom tab bar; search
+            is reached via the Recettes tab, notifications via the "Plus" badge). */}
 
         {/* Desktop CTA. */}
         <Link

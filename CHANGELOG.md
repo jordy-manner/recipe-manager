@@ -2,6 +2,16 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.22] — 2026-06-12
+
+- **Mobile nav tweaks** (design review): the mobile (`< sm`) top bar is now the
+  **logo only** — the search shortcut is removed (search is reached via the
+  Recettes tab) and the notification bell stays **desktop-only**. In the "Plus"
+  bottom sheet, the **Paramètres** entry gains an accent **count badge** (top-right
+  of its icon) reusing the notification `todoCount` (0 → no badge); the badge is
+  `aria-hidden` and the link's `aria-label` includes "(N à compléter)". The raised
+  "Créer" FAB and the "Plus" tab badge are unchanged.
+
 ## [v0.2.21] — 2026-06-12
 
 - **Operational seasonal-data update** (`lib/season-update.ts` `runSeasonUpdate`):

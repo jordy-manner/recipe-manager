@@ -7,7 +7,7 @@
     ],
     "scope": "France métropolitaine",
     "updated": "2025-06",
-    "note": "months: 1 = janvier, 12 = décembre"
+    "note": "months: 1 = janvier, 12 = décembre. Fruits tropicaux importés (banane, avocat, ananas, mangue) marqués disponibles toute l’année, hors calendrier France."
   },
   "items": [
     {
@@ -1333,6 +1333,82 @@
       "category": "legumineuses",
       "months": [
         9
+      ]
+    },
+    {
+      "slug": "banane",
+      "label": "Banane",
+      "category": "fruits",
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "slug": "avocat",
+      "label": "Avocat",
+      "category": "fruits",
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "slug": "ananas",
+      "label": "Ananas",
+      "category": "fruits",
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "slug": "mangue",
+      "label": "Mangue",
+      "category": "fruits",
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
       ]
     }
   ]

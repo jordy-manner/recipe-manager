@@ -2,6 +2,19 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.24] — 2026-06-12
+
+- **Seasonal dataset — year-round tropical imports**: add **banane, avocat,
+  ananas, mangue** to `lib/data/seasonality.json` as `fruits` available all year
+  (`months: 1–12`), with their ADEME Agribalyse footprint committed to
+  `carbon-ademe.json` (banane 0.79, ananas 1.24, avocat 1.46, **mangue 11.80** —
+  air-freighted, "high" tier). These imports were absent from the French seasonal
+  calendar, so they never showed on `/saisons`; they now appear whenever a month
+  is selected. (Out-of-season produce staying hidden is by design — the rework
+  shows only the selection; pick "Toute l'année" or the relevant months to widen.)
+  Apply to a seeded DB via `npm run seasonality -- import` (the page reads the DB,
+  not the committed JSON).
+
 ## [v0.2.23] — 2026-06-12
 
 - **`/saisons` rework** (design handoff `saisons_rework`): the page becomes a

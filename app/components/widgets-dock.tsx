@@ -153,6 +153,7 @@ export function WidgetsDock() {
   const eggT = eggTime(doneness, size, temp, count);
 
   const seq = useRef(0);
+  const acRef = useRef<AudioContext | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
@@ -190,11 +191,17 @@ export function WidgetsDock() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [menuOpen]);
 
+  // One reused AudioContext (resumed on each beep) — avoids spawning a new
+  // context per beep across the repeating alarm.
   const beep = useCallback(() => {
     try {
-      const Ctx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctx) return;
-      const ac = new Ctx();
+      if (!acRef.current) {
+        const Ctx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!Ctx) return;
+        acRef.current = new Ctx();
+      }
+      const ac = acRef.current;
+      if (ac.state === "suspended") void ac.resume();
       const tone = (t0: number) => {
         const o = ac.createOscillator();
         const g = ac.createGain();
@@ -216,13 +223,13 @@ export function WidgetsDock() {
     }
   }, []);
 
+  // Reopen + flash the popin when a timer fires (the recurring beep/vibration is
+  // driven by the `hasRinging` effect below, so it keeps going until stopped).
   const fireAlert = useCallback(() => {
-    beep();
-    navigator.vibrate?.([200, 100, 200, 100, 200]);
     setPopin("timer");
     setFlash(true);
     setTimeout(() => setFlash(false), 2600);
-  }, [beep]);
+  }, []);
 
   const addTimer = (label: string, kind: TimerKind, total: number) => {
     if (total <= 0) return;
@@ -242,6 +249,26 @@ export function WidgetsDock() {
   const remove = (id: number) => setTimers((ts) => ts.filter((t) => t.id !== id));
 
   const running = timers.filter((t) => t.running || t.ringing);
+
+  // Sustained alarm: while at least one timer is ringing, beep + vibrate every
+  // ~1.8 s for up to 1 minute, or until the user stops it (no timer ringing →
+  // effect cleanup). Vibration is mobile-only (no-op elsewhere).
+  const hasRinging = timers.some((t) => t.ringing);
+  useEffect(() => {
+    if (!hasRinging) return;
+    const pulse = () => {
+      beep();
+      navigator.vibrate?.([400, 200, 400]);
+    };
+    pulse();
+    const iv = setInterval(pulse, 1800);
+    const stop = setTimeout(() => clearInterval(iv), 60_000);
+    return () => {
+      clearInterval(iv);
+      clearTimeout(stop);
+      navigator.vibrate?.(0); // cancel any ongoing vibration
+    };
+  }, [hasRinging, beep]);
 
   // Popin a11y: focus the dialog on open, trap Tab, Escape closes.
   useEffect(() => {
@@ -564,12 +591,20 @@ export function WidgetsDock() {
                         <div className="font-mono text-[18px] font-medium text-ink">{t.ringing ? "À retirer !" : mmss(t.remaining)}</div>
                         <div className="truncate text-xs text-ink-faint">{t.label}</div>
                       </div>
-                      <button type="button" onClick={() => toggle(t.id)} title={t.running ? "Pause" : "Reprendre"} aria-label={t.running ? "Pause" : "Reprendre"} className="grid h-8 w-8 place-items-center rounded-full bg-surface-muted text-ink-soft transition hover:bg-line hover:text-ink">
-                        <Icon name={t.ringing ? "refresh" : t.running ? "pause" : "play"} size={15} />
+                      <button
+                        type="button"
+                        onClick={() => toggle(t.id)}
+                        title={t.ringing ? "Relancer" : t.running ? "Pause" : "Reprendre"}
+                        aria-label={t.ringing ? "Relancer" : t.running ? "Pause" : "Reprendre"}
+                        className="grid h-8 w-8 place-items-center rounded-full bg-surface-muted text-ink-soft transition hover:bg-line hover:text-ink"
+                      >
+                        <Icon name={t.running ? "pause" : "play"} size={15} />
                       </button>
-                      <button type="button" onClick={() => resetTimer(t.id)} title="Réinitialiser" aria-label="Réinitialiser" className="grid h-8 w-8 place-items-center rounded-full bg-surface-muted text-ink-soft transition hover:bg-line hover:text-ink">
-                        <Icon name="refresh" size={15} />
-                      </button>
+                      {!t.ringing && (
+                        <button type="button" onClick={() => resetTimer(t.id)} title="Réinitialiser" aria-label="Réinitialiser" className="grid h-8 w-8 place-items-center rounded-full bg-surface-muted text-ink-soft transition hover:bg-line hover:text-ink">
+                          <Icon name="refresh" size={15} />
+                        </button>
+                      )}
                       <button type="button" onClick={() => remove(t.id)} title="Supprimer" aria-label="Supprimer" className="grid h-8 w-8 place-items-center rounded-full bg-surface-muted text-ink-soft transition hover:bg-line hover:text-ink">
                         <Icon name="x" size={15} />
                       </button>

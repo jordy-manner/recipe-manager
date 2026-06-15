@@ -2,6 +2,18 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.29] — 2026-06-15
+
+- **Timer alert** (widgets): the end-of-timer alarm now **repeats** (beep +
+  vibration every ~1.8 s) for up to **1 minute** or until the user stops it
+  (Relancer / Pause / Réinitialiser / Supprimer), instead of a single beep. The
+  AudioContext is reused across beeps; vibration pulses each cycle (mobile) and is
+  cancelled on stop.
+- **Fix**: a ringing timer in the "Minuteurs en cours" list showed **two**
+  reset-looking buttons — the play/pause control no longer borrows the refresh
+  icon (it becomes "Relancer" ▶) and the separate Réinitialiser button is hidden
+  while ringing, leaving a single relaunch action.
+
 ## [v0.2.28] — 2026-06-15
 
 - **Kitchen widgets dock** (design handoff `widgets`): a floating launcher

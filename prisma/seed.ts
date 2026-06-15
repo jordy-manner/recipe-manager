@@ -5,6 +5,7 @@ config({ path: ".env" });
 
 import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { AISLES, UNIT_KINDS } from "../lib/catalog";
 
 const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -26,6 +27,25 @@ const UNITS = [
   "sachet",
   "verre",
 ];
+
+// Default unit family ("type") for each standard unit, used to seed the
+// UnitType referential link (matches the UNIT_KINDS list in lib/catalog).
+const UNIT_TYPE_OF: Record<string, string> = {
+  g: "Masse",
+  kg: "Masse",
+  ml: "Volume",
+  cl: "Volume",
+  L: "Volume",
+  verre: "Volume",
+  "c. à c.": "Cuillère/pincée",
+  "c. à s.": "Cuillère/pincée",
+  pincée: "Cuillère/pincée",
+  "pièce(s)": "Quantité",
+  "tranche(s)": "Quantité",
+  "gousse(s)": "Quantité",
+  poignée: "Quantité",
+  sachet: "Quantité",
+};
 
 // Catalog of recipe categories (a recipe can have several).
 const CATEGORIES = [
@@ -488,8 +508,20 @@ const RECIPES: SeedRecipe[] = [
 ];
 
 async function main() {
+  // Editable referentials feeding the catalog dropdowns (managed from
+  // /parametres/{rayons,types-unite}). Seeded first so units can connect their
+  // type below.
+  for (const name of AISLES) {
+    await prisma.aisle.upsert({ where: { name }, update: {}, create: { name } });
+  }
+  for (const name of UNIT_KINDS) {
+    await prisma.unitType.upsert({ where: { name }, update: {}, create: { name } });
+  }
+
   for (const name of UNITS) {
-    await prisma.unit.upsert({ where: { name }, update: {}, create: { name } });
+    const typeName = UNIT_TYPE_OF[name];
+    const type = typeName ? { type: { connect: { name: typeName } } } : {};
+    await prisma.unit.upsert({ where: { name }, update: type, create: { name, ...type } });
   }
   for (const name of UTENSILS) {
     await prisma.utensil.upsert({ where: { name }, update: {}, create: { name } });

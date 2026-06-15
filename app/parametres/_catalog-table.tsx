@@ -28,20 +28,29 @@ export type CatalogRow = {
   name: string;
   uses: number;
   image?: string | null;
-  aisle?: string | null;
+  aisleId?: string | null;
   defaultUnitId?: string | null;
   abbreviation?: string | null;
-  kind?: string | null;
+  typeId?: string | null;
   _draft?: boolean; // not yet persisted (added on the fly, name still empty)
 };
 
-type FieldKey = "name" | "aisle" | "defaultUnitId" | "abbreviation" | "kind";
+type FieldKey = "name" | "aisleId" | "defaultUnitId" | "abbreviation" | "typeId";
+
+type ComboOption = { value: string; label: string };
+
+type CreateRefResult =
+  | { ok: true; row: { id: string; name: string } }
+  | { ok: false; error: string };
 
 export type Column = {
   key: FieldKey;
   label: string;
-  type?: "text" | "select";
-  options?: { value: string; label: string }[];
+  /** "text" = free input, "combo" = creatable referential combobox. */
+  type?: "text" | "combo";
+  options?: ComboOption[];
+  /** Creates a new referential value (combo columns); returns the new row. */
+  onCreate?: (name: string) => Promise<CreateRefResult>;
   width: string;
   placeholder?: string;
   strong?: boolean;
@@ -64,9 +73,9 @@ type Props = {
 function createFor(kind: CatalogKind, row: CatalogRow) {
   const name = row.name.trim();
   if (kind === "ingredient")
-    return createIngredient({ name, aisle: row.aisle ?? null, defaultUnitId: row.defaultUnitId ?? null });
+    return createIngredient({ name, aisleId: row.aisleId ?? null, defaultUnitId: row.defaultUnitId ?? null });
   if (kind === "unit")
-    return createUnit({ name, abbreviation: row.abbreviation ?? null, kind: row.kind ?? null });
+    return createUnit({ name, abbreviation: row.abbreviation ?? null, typeId: row.typeId ?? null });
   return createUtensil({ name });
 }
 
@@ -74,13 +83,13 @@ function updateFor(kind: CatalogKind, id: string, key: FieldKey, row: CatalogRow
   if (kind === "utensil") return updateUtensil(id, row.name.trim());
   if (kind === "ingredient") {
     if (key === "name") return updateIngredient(id, { name: row.name.trim() });
-    if (key === "aisle") return updateIngredient(id, { aisle: row.aisle ?? null });
+    if (key === "aisleId") return updateIngredient(id, { aisleId: row.aisleId ?? null });
     return updateIngredient(id, { defaultUnitId: row.defaultUnitId ?? null });
   }
   // unit
   if (key === "name") return updateUnit(id, { name: row.name.trim() });
   if (key === "abbreviation") return updateUnit(id, { abbreviation: row.abbreviation ?? null });
-  return updateUnit(id, { kind: row.kind ?? null });
+  return updateUnit(id, { typeId: row.typeId ?? null });
 }
 
 function deleteFor(kind: CatalogKind, id: string) {
@@ -108,6 +117,192 @@ function UsageBadge({ n }: { n: number }) {
     >
       {n} <span className="text-[10px]">rec.</span>
     </span>
+  );
+}
+
+/* ---- creatable cell combobox (referential value + "+ Créer") ---- */
+
+// Compact combobox for a table cell: accent-insensitive search over an editable
+// referential, with a highlighted "Créer « … »" row when the query matches no
+// option exactly. Same UX as the recipe form's FormCombobox (lot 4), sized for a
+// dense row. Values are referential ids; the visible text is the matching label.
+function CellCombo({
+  value,
+  options,
+  onPick,
+  onCreate,
+  warn,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string | null;
+  options: ComboOption[];
+  onPick: (value: string) => void;
+  onCreate?: (name: string) => void;
+  warn?: boolean;
+  placeholder?: string;
+  ariaLabel?: string;
+}) {
+  const [q, setQ] = useState<string | null>(null); // null = display the selected label
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const optId = (i: number) => `${listId}-opt-${i}`;
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQ(null);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+  const text = q === null ? selectedLabel : q;
+  const ql = norm(q ?? "");
+  const filtered = ql ? options.filter((o) => norm(o.label).includes(ql)) : options;
+  const exact = options.some((o) => norm(o.label) === norm((q ?? "").trim()));
+  const showCreate = !!onCreate && !!(q && q.trim()) && !exact;
+  const count = filtered.length + (showCreate ? 1 : 0);
+  const createIndex = showCreate ? filtered.length : -1;
+
+  const close = () => {
+    setOpen(false);
+    setQ(null);
+  };
+  const pick = (o: ComboOption) => {
+    onPick(o.value);
+    close();
+  };
+  const create = () => {
+    onCreate?.((q ?? "").trim());
+    close();
+  };
+  const choose = (i: number) => {
+    if (i === createIndex) create();
+    else if (filtered[i]) pick(filtered[i]);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!open) setOpen(true);
+      setActive((a) => (count ? Math.min(count - 1, a + 1) : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => Math.max(0, a - 1));
+    } else if (e.key === "Enter") {
+      if (open && count) {
+        e.preventDefault();
+        choose(Math.min(active, count - 1));
+      }
+    } else if (e.key === "Escape") {
+      if (open) {
+        e.preventDefault();
+        close();
+      }
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <div
+        className={
+          "flex items-center gap-1 rounded-input border bg-surface pr-1.5 transition focus-within:border-accent " +
+          (warn ? "border-amber" : "border-line")
+        }
+      >
+        <input
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && count ? optId(Math.min(active, count - 1)) : undefined}
+          aria-label={ariaLabel}
+          aria-invalid={warn || undefined}
+          value={text}
+          placeholder={placeholder ?? "—"}
+          autoComplete="off"
+          onFocus={() => {
+            setOpen(true);
+            setQ("");
+            setActive(0);
+          }}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+            setActive(0);
+          }}
+          onKeyDown={onKeyDown}
+          className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-ink outline-none placeholder:text-ink-faint"
+        />
+        <Icon
+          name="chevron"
+          size={13}
+          className={"shrink-0 text-ink-faint transition " + (open ? "rotate-90" : "")}
+        />
+      </div>
+
+      {open && (
+        <ul
+          role="listbox"
+          id={listId}
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-56 min-w-[160px] overflow-auto rounded-input border border-line bg-surface p-1.5 shadow-card-lg"
+        >
+          {filtered.map((o, i) => (
+            <li key={o.value} role="option" id={optId(i)} aria-selected={i === active}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  pick(o);
+                }}
+                onMouseEnter={() => setActive(i)}
+                className={
+                  "flex w-full items-center justify-between gap-2 rounded-[8px] px-2.5 py-1.5 text-left text-sm text-ink transition " +
+                  (i === active ? "bg-surface-muted" : "")
+                }
+              >
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                {o.value === value && <Icon name="check" size={13} strokeWidth={2.4} className="shrink-0 text-accent-ink" />}
+              </button>
+            </li>
+          ))}
+
+          {!filtered.length && !showCreate && (
+            <li className="px-2.5 py-2 text-center text-[13px] text-ink-faint">Aucun résultat.</li>
+          )}
+
+          {showCreate && (
+            <li role="option" id={optId(createIndex)} aria-selected={active === createIndex}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  create();
+                }}
+                onMouseEnter={() => setActive(createIndex)}
+                className={
+                  "mt-1 flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[13.5px] font-bold text-accent-ink transition " +
+                  (active === createIndex
+                    ? "bg-[color-mix(in_oklab,var(--color-accent-soft)_78%,var(--color-accent))]"
+                    : "bg-accent-soft")
+                }
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-accent text-white">
+                  <Icon name="plus" size={13} strokeWidth={2.4} />
+                </span>
+                Créer «&nbsp;{(q ?? "").trim()}&nbsp;»
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -241,6 +436,14 @@ export function CatalogTable({
   const draftSeq = useRef(0);
   const prevVal = useRef<string | null>(null);
 
+  // Combobox options live in state (seeded from the columns) so a value created
+  // on the fly via "+ Créer" shows up immediately in every row's dropdown.
+  const [optionsByKey, setOptionsByKey] = useState<Record<string, ComboOption[]>>(() =>
+    Object.fromEntries(
+      columns.filter((c) => c.type === "combo").map((c) => [c.key, c.options ?? []]),
+    ),
+  );
+
   const incomplete = (r: CatalogRow) => requiredKeys.some((k) => !r[k]);
   const todoCount = rows.filter(incomplete).length;
 
@@ -277,10 +480,38 @@ export function CatalogTable({
     });
   };
 
+  // Pick an existing referential value on a combo cell (persist like a select).
+  const pickCombo = (row: CatalogRow, key: FieldKey, value: string | null) => {
+    const old = (row[key] as string | null) ?? null;
+    setField(row.id, key, value);
+    persistRow({ ...row, [key]: value }, key, old);
+  };
+
+  // Create a referential value from a combo cell, append it to the shared
+  // options, then select it on the row.
+  const createCombo = (row: CatalogRow, col: Column, name: string) => {
+    if (!col.onCreate) return;
+    startTransition(async () => {
+      const res = await col.onCreate!(name);
+      if (!res.ok) {
+        flash(res.error, "err");
+        return;
+      }
+      const opt = { value: res.row.id, label: res.row.name };
+      setOptionsByKey((m) => {
+        const list = m[col.key] ?? [];
+        return list.some((o) => o.value === opt.value)
+          ? m
+          : { ...m, [col.key]: [...list, opt].sort((a, b) => a.label.localeCompare(b.label, "fr")) };
+      });
+      pickCombo(row, col.key, opt.value);
+    });
+  };
+
   const add = () => {
     const id = `draft-${++draftSeq.current}`;
     setRows((rs) => [
-      { id, name: "", uses: 0, image: null, aisle: null, defaultUnitId: null, abbreviation: null, kind: null, _draft: true },
+      { id, name: "", uses: 0, image: null, aisleId: null, defaultUnitId: null, abbreviation: null, typeId: null, _draft: true },
       ...rs,
     ]);
     setStatus("all");
@@ -446,30 +677,18 @@ export function CatalogTable({
                 {columns.map((c, ci) => {
                   const value = (r[c.key] as string | null) ?? "";
                   const warn = todo && requiredKeys.includes(c.key) && !value;
-                  if (c.type === "select") {
+                  if (c.type === "combo") {
                     return (
                       <div key={c.key}>
-                        <select
-                          aria-label={`${c.label} — ${r.name || "nouvelle entrée"}`}
-                          value={value}
-                          onChange={(e) => {
-                            const old = (r[c.key] as string | null) ?? null;
-                            const val = e.target.value || null;
-                            setField(r.id, c.key, val);
-                            persistRow({ ...r, [c.key]: val }, c.key, old);
-                          }}
-                          className={
-                            "select-chevron w-full rounded-input border bg-surface px-2.5 py-1.5 text-sm text-ink outline-none focus:border-accent " +
-                            (warn ? "border-amber" : "border-line")
-                          }
-                        >
-                          <option value="">—</option>
-                          {c.options?.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </select>
+                        <CellCombo
+                          value={value || null}
+                          options={optionsByKey[c.key] ?? []}
+                          warn={warn}
+                          placeholder={c.placeholder}
+                          ariaLabel={`${c.label} — ${r.name || "nouvelle entrée"}`}
+                          onPick={(v) => pickCombo(r, c.key, v)}
+                          onCreate={c.onCreate ? (name) => createCombo(r, c, name) : undefined}
+                        />
                       </div>
                     );
                   }

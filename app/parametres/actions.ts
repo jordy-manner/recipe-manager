@@ -12,7 +12,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getMediaStore } from "@/lib/media";
-import { AISLES, UNIT_KINDS, type IngredientRow, type UnitRow, type UtensilRow } from "@/lib/catalog";
+import { type IngredientRow, type UnitRow, type UtensilRow } from "@/lib/catalog";
 
 export type ActionResult<T = unknown> =
   | ({ ok: true } & T)
@@ -36,26 +36,18 @@ function writeError(e: unknown, dupMessage: string): string {
 /* Ingredients                                                         */
 /* ------------------------------------------------------------------ */
 
-// Validate against the known lists but keep the TS input as a plain string, so
-// the client (whose rows carry string|null fields) can call these directly.
-const aisleField = z
-  .string()
-  .trim()
-  .refine((v) => (AISLES as readonly string[]).includes(v), "Rayon invalide");
-const kindField = z
-  .string()
-  .trim()
-  .refine((v) => (UNIT_KINDS as readonly string[]).includes(v), "Type invalide");
-
+// The aisle / default unit / unit type are foreign keys to editable
+// referentials (Aisle / Unit / UnitType): the input is the referential id, and
+// the FK constraint enforces that it exists (no constant list to validate).
 const ingredientSchema = z.object({
   name: z.string().trim().min(1, "Le nom est obligatoire"),
-  aisle: aisleField.nullable().optional(),
+  aisleId: z.string().trim().min(1).nullable().optional(),
   defaultUnitId: z.string().trim().min(1).nullable().optional(),
 });
 
 export type IngredientPatch = {
   name?: string;
-  aisle?: string | null;
+  aisleId?: string | null;
   defaultUnitId?: string | null;
 };
 
@@ -65,7 +57,7 @@ async function ingredientRow(id: string): Promise<IngredientRow> {
     select: {
       id: true,
       name: true,
-      aisle: true,
+      aisleId: true,
       defaultUnitId: true,
       image: true,
       _count: { select: { recipeIngredients: true } },
@@ -74,7 +66,7 @@ async function ingredientRow(id: string): Promise<IngredientRow> {
   return {
     id: r.id,
     name: r.name,
-    aisle: r.aisle,
+    aisleId: r.aisleId,
     defaultUnitId: r.defaultUnitId,
     image: r.image,
     uses: r._count.recipeIngredients,
@@ -90,7 +82,7 @@ export async function createIngredient(
     const created = await prisma.ingredient.create({
       data: {
         name: parsed.data.name,
-        aisle: parsed.data.aisle ?? null,
+        aisleId: parsed.data.aisleId ?? null,
         defaultUnitId: parsed.data.defaultUnitId ?? null,
       },
       select: { id: true },
@@ -113,7 +105,7 @@ export async function updateIngredient(
       where: { id },
       data: {
         ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
-        ...(parsed.data.aisle !== undefined ? { aisle: parsed.data.aisle } : {}),
+        ...(parsed.data.aisleId !== undefined ? { aisleId: parsed.data.aisleId } : {}),
         ...(parsed.data.defaultUnitId !== undefined
           ? { defaultUnitId: parsed.data.defaultUnitId }
           : {}),
@@ -278,13 +270,13 @@ export async function mergeUtensil(
 const unitSchema = z.object({
   name: z.string().trim().min(1, "Le nom est obligatoire"),
   abbreviation: z.string().trim().min(1).nullable().optional(),
-  kind: kindField.nullable().optional(),
+  typeId: z.string().trim().min(1).nullable().optional(),
 });
 
 export type UnitPatch = {
   name?: string;
   abbreviation?: string | null;
-  kind?: string | null;
+  typeId?: string | null;
 };
 
 async function unitRow(id: string): Promise<UnitRow> {
@@ -294,7 +286,7 @@ async function unitRow(id: string): Promise<UnitRow> {
       id: true,
       name: true,
       abbreviation: true,
-      kind: true,
+      typeId: true,
       _count: { select: { recipeIngredients: true } },
     },
   });
@@ -302,7 +294,7 @@ async function unitRow(id: string): Promise<UnitRow> {
     id: r.id,
     name: r.name,
     abbreviation: r.abbreviation,
-    kind: r.kind,
+    typeId: r.typeId,
     uses: r._count.recipeIngredients,
   };
 }
@@ -317,7 +309,7 @@ export async function createUnit(
       data: {
         name: parsed.data.name,
         abbreviation: parsed.data.abbreviation ?? null,
-        kind: parsed.data.kind ?? null,
+        typeId: parsed.data.typeId ?? null,
       },
       select: { id: true },
     });
@@ -342,7 +334,7 @@ export async function updateUnit(
         ...(parsed.data.abbreviation !== undefined
           ? { abbreviation: parsed.data.abbreviation }
           : {}),
-        ...(parsed.data.kind !== undefined ? { kind: parsed.data.kind } : {}),
+        ...(parsed.data.typeId !== undefined ? { typeId: parsed.data.typeId } : {}),
       },
     });
     revalidateCatalogConsumers();

@@ -24,6 +24,15 @@ export const SETTINGS_NAV: SettingsGroup[] = [
     ],
   },
   {
+    group: "Référentiels",
+    items: [
+      { slug: "rayons", label: "Rayons", icon: "folder" },
+      { slug: "types-unite", label: "Types d'unité", icon: "layers" },
+      { slug: "tags", label: "Tags", icon: "tag" },
+      { slug: "categories", label: "Catégories", icon: "grid" },
+    ],
+  },
+  {
     group: "Données",
     items: [{ slug: "saisons", label: "Données de saison", icon: "leaf" }],
   },

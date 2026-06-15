@@ -238,6 +238,7 @@ export function RecipeForm({
   utensilOptions,
   tagOptions,
   categoryOptions,
+  unitTypeOptions,
   mediaEnabled = false,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -248,6 +249,7 @@ export function RecipeForm({
   utensilOptions: string[];
   tagOptions: string[];
   categoryOptions: string[];
+  unitTypeOptions: { id: string; name: string }[];
   mediaEnabled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, { error: null });
@@ -432,11 +434,11 @@ export function RecipeForm({
 
   // Unit: pick / type → set the unit and mark it touched; "+ Créer" opens the
   // mini-modal (abbreviation + type) before creating.
-  const confirmUnit = (abbreviation: string, kind: string) => {
+  const confirmUnit = (abbreviation: string, typeId: string | null) => {
     if (!pendingUnit) return;
     const { key, name } = pendingUnit;
     startCreate(async () => {
-      const res = await createUnitEntry({ name, abbreviation, kind });
+      const res = await createUnitEntry({ name, abbreviation, typeId });
       if (!res.ok) {
         toast(res.error);
         return;
@@ -1046,6 +1048,7 @@ export function RecipeForm({
       {pendingUnit && (
         <UnitCreateModal
           name={pendingUnit.name}
+          unitTypes={unitTypeOptions}
           onConfirm={confirmUnit}
           onClose={() => setPendingUnit(null)}
         />

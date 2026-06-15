@@ -11,15 +11,16 @@ export const metadata = { title: "Nouvelle recette" };
 export const dynamic = "force-dynamic";
 
 export default async function NewRecipePage() {
-  const [ingredients, units, utensils, tags, categories] = await Promise.all([
+  const [ingredients, units, utensils, tags, categories, unitTypes] = await Promise.all([
     prisma.ingredient.findMany({
       orderBy: { name: "asc" },
-      select: { name: true, aisle: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
+      select: { name: true, aisleId: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
     }),
     prisma.unit.findMany({ orderBy: { name: "asc" }, select: { name: true, abbreviation: true } }),
     prisma.utensil.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.tag.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.category.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+    prisma.unitType.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
 
   return (
@@ -39,12 +40,13 @@ export default async function NewRecipePage() {
         ingredientOptions={ingredients.map((i) => ({
           name: i.name,
           defaultUnit: i.defaultUnit?.name ?? null,
-          incomplete: !i.defaultUnitId || !i.aisle,
+          incomplete: !i.defaultUnitId || !i.aisleId,
         }))}
         unitOptions={units.map((u) => ({ name: u.name, abbreviation: u.abbreviation }))}
         utensilOptions={utensils.map((u) => u.name)}
         tagOptions={tags.map((t) => t.name)}
         categoryOptions={categories.map((c) => c.name)}
+        unitTypeOptions={unitTypes}
         mediaEnabled={getMediaStore().configured}
       />
     </main>

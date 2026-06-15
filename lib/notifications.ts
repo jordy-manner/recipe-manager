@@ -43,17 +43,17 @@ const LIST_CAP = 4;
 // Seasonal data is considered stale after this many days without a check.
 const SEASON_STALE_DAYS = 30;
 
-function ingredientSub(i: { aisle: string | null; defaultUnitId: string | null }): string {
+function ingredientSub(i: { aisleId: string | null; defaultUnitId: string | null }): string {
   const missing: string[] = [];
-  if (!i.aisle) missing.push("rayon");
+  if (!i.aisleId) missing.push("rayon");
   if (!i.defaultUnitId) missing.push("unité par défaut");
   return `${missing.join(" et ").replace(/^./, (c) => c.toUpperCase())} à renseigner`;
 }
 
-function unitSub(u: { abbreviation: string | null; kind: string | null }): string {
+function unitSub(u: { abbreviation: string | null; typeId: string | null }): string {
   const missing: string[] = [];
   if (!u.abbreviation) missing.push("abréviation");
-  if (!u.kind) missing.push("type");
+  if (!u.typeId) missing.push("type");
   return `${missing.join(" et ").replace(/^./, (c) => c.toUpperCase())} à renseigner`;
 }
 
@@ -61,13 +61,13 @@ export const getNotifications = cache(async (): Promise<Notifications> => {
   try {
     const [ingredients, units, seasonChecked, noPhoto] = await Promise.all([
       prisma.ingredient.findMany({
-        where: { OR: [{ aisle: null }, { defaultUnitId: null }] },
-        select: { id: true, name: true, aisle: true, defaultUnitId: true },
+        where: { OR: [{ aisleId: null }, { defaultUnitId: null }] },
+        select: { id: true, name: true, aisleId: true, defaultUnitId: true },
         orderBy: { name: "asc" },
       }),
       prisma.unit.findMany({
-        where: { OR: [{ abbreviation: null }, { kind: null }] },
-        select: { id: true, name: true, abbreviation: true, kind: true },
+        where: { OR: [{ abbreviation: null }, { typeId: null }] },
+        select: { id: true, name: true, abbreviation: true, typeId: true },
         orderBy: { name: "asc" },
       }),
       getSetting(SETTING_KEYS.seasonLastChecked),

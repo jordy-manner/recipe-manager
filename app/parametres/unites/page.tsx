@@ -1,28 +1,31 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { UNIT_KINDS } from "@/lib/catalog";
 import { CatalogTable, type CatalogRow, type Column } from "../_catalog-table";
+import { createUnitType } from "../ref-actions";
 
 export const metadata: Metadata = { title: "Unités" };
 export const dynamic = "force-dynamic";
 
 export default async function UnitsPage() {
-  const units = await prisma.unit.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      abbreviation: true,
-      kind: true,
-      _count: { select: { recipeIngredients: true } },
-    },
-  });
+  const [units, unitTypes] = await Promise.all([
+    prisma.unit.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        abbreviation: true,
+        typeId: true,
+        _count: { select: { recipeIngredients: true } },
+      },
+    }),
+    prisma.unitType.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
 
   const rows: CatalogRow[] = units.map((u) => ({
     id: u.id,
     name: u.name,
     abbreviation: u.abbreviation,
-    kind: u.kind,
+    typeId: u.typeId,
     uses: u._count.recipeIngredients,
   }));
 
@@ -43,11 +46,13 @@ export default async function UnitsPage() {
       placeholder: "ex. g",
     },
     {
-      key: "kind",
+      key: "typeId",
       label: "Type",
-      type: "select",
-      options: UNIT_KINDS.map((k) => ({ value: k, label: k })),
+      type: "combo",
+      options: unitTypes.map((t) => ({ value: t.id, label: t.name })),
+      onCreate: createUnitType,
       width: "minmax(150px,1fr)",
+      placeholder: "Type…",
     },
   ];
 
@@ -60,7 +65,7 @@ export default async function UnitsPage() {
       hasImage={false}
       columns={columns}
       initialRows={rows}
-      requiredKeys={["abbreviation", "kind"]}
+      requiredKeys={["abbreviation", "typeId"]}
     />
   );
 }

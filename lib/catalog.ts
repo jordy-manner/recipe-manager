@@ -3,7 +3,12 @@
 // by the Server Actions (validation) and by the CatalogTable client component
 // (selects, "À compléter" status, accent-insensitive search).
 
-/** Grocery aisles ("rayon") offered for an ingredient. Free list, may grow. */
+// Grocery aisles ("rayon") and unit families ("type") are now editable
+// referentials (models Aisle / UnitType, managed from /parametres). These lists
+// remain the *seed* defaults only (prisma/seed.ts) — runtime options come from
+// the DB and validation is enforced by the foreign keys, not by these arrays.
+
+/** Default grocery aisles ("rayon"), used to seed the Aisle referential. */
 export const AISLES = [
   "Légume",
   "Fruit",
@@ -16,16 +21,13 @@ export const AISLES = [
   "Boisson",
 ] as const;
 
-/** Unit families offered for a unit. */
+/** Default unit families, used to seed the UnitType referential. */
 export const UNIT_KINDS = [
   "Masse",
   "Volume",
   "Quantité",
   "Cuillère/pincée",
 ] as const;
-
-export type Aisle = (typeof AISLES)[number];
-export type UnitKind = (typeof UNIT_KINDS)[number];
 
 /** Which catalog a CatalogTable edits. */
 export type CatalogKind = "ingredient" | "utensil" | "unit";
@@ -35,7 +37,7 @@ export type CatalogKind = "ingredient" | "utensil" | "unit";
 export type IngredientRow = {
   id: string;
   name: string;
-  aisle: string | null;
+  aisleId: string | null;
   defaultUnitId: string | null;
   image: string | null;
   uses: number;
@@ -52,7 +54,14 @@ export type UnitRow = {
   id: string;
   name: string;
   abbreviation: string | null;
-  kind: string | null;
+  typeId: string | null;
+  uses: number;
+};
+
+/** A referential entry (aisle / unit type / tag / category) with its usage. */
+export type RefRow = {
+  id: string;
+  name: string;
   uses: number;
 };
 
@@ -67,16 +76,16 @@ export function norm(value: string): string {
 
 /** An ingredient is incomplete when it lacks an aisle or a default unit. */
 export function ingredientIncomplete(r: {
-  aisle: string | null;
+  aisleId: string | null;
   defaultUnitId: string | null;
 }): boolean {
-  return !r.aisle || !r.defaultUnitId;
+  return !r.aisleId || !r.defaultUnitId;
 }
 
-/** A unit is incomplete when it lacks an abbreviation or a kind. */
+/** A unit is incomplete when it lacks an abbreviation or a type. */
 export function unitIncomplete(r: {
   abbreviation: string | null;
-  kind: string | null;
+  typeId: string | null;
 }): boolean {
-  return !r.abbreviation || !r.kind;
+  return !r.abbreviation || !r.typeId;
 }

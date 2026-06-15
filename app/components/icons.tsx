@@ -79,6 +79,21 @@ const paths: Record<string, ReactNode> = {
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
     </>
   ),
+  tag: (
+    <>
+      <path d="M3 3h7l11 11-7 7L3 10V3Z" />
+      <circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none" />
+    </>
+  ),
+  folder: (
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+  ),
+  layers: (
+    <>
+      <path d="M12 3 3 8l9 5 9-5-9-5Z" />
+      <path d="M3 13l9 5 9-5M3 18l9 5 9-5" />
+    </>
+  ),
   grip: <path d="M4 6h16M4 12h16M4 18h16" />,
   menu: <path d="M3 6h18M3 12h18M3 18h18" />,
   home: (

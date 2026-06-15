@@ -2,6 +2,32 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.25] — 2026-06-15
+
+- **Editable referentials** (design handoff `referentiels`): the lists feeding
+  the catalog dropdowns become first-class, manageable data.
+  - **Schema**: the grocery aisle ("rayon") and the unit family ("type") are
+    promoted from free string columns to **referential tables** — new models
+    **Aisle** (`Ingredient.aisleId`) and **UnitType** (`Unit.typeId`), joining
+    the existing **Tag** / **Category**. Renaming a value now follows the id, so
+    every entity referencing it is renamed at once. Data-safe migration: the
+    tables are seeded with the canonical lists + any value already in use, then
+    existing rows are backfilled before the old columns are dropped.
+  - **Creatable catalog cells**: the Rayon / Unité par défaut / Type `<select>`s
+    in `/parametres/{ingredients,unites}` become **comboboxes** (`CellCombo`,
+    same accent-insensitive "+ Créer" UX as the recipe form). Creating upserts
+    the referential (or a Unit for "Unité par défaut") and selects it on the row.
+  - **Référentiels rail group** + 4 views (`RefList`): **Rayons**, **Types
+    d'unité**, **Tags**, **Catégories** — search, add (focused row), inline
+    rename, usage counter, delete **blocked server-side when still in use**
+    (lock + toast). Server Actions in `ref-actions.ts`.
+  - Knock-on updates: the recipe-form unit-create modal now picks a `UnitType`
+    (passed from the page); `lib/season-update` resolves the derived aisle by
+    name; `lib/notifications` and the "À compléter" derivations switch to the FKs.
+  - **Prod rollout**: the migration backfills automatically; run `npm run seed`
+    (or it is implied by deploy seeding) only to top up the canonical referentials
+    on a fresh DB.
+
 ## [v0.2.24] — 2026-06-12
 
 - **Seasonal dataset — year-round tropical imports**: add **banane, avocat,

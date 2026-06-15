@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function EditRecipePage({ params }: Props) {
   const { slug } = await params;
-  const [row, ingredients, units, utensils, tags, categories] = await Promise.all([
+  const [row, ingredients, units, utensils, tags, categories, unitTypes] = await Promise.all([
     prisma.recipe.findUnique({
       where: { slug },
       include: {
@@ -37,12 +37,13 @@ export default async function EditRecipePage({ params }: Props) {
     }),
     prisma.ingredient.findMany({
       orderBy: { name: "asc" },
-      select: { name: true, aisle: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
+      select: { name: true, aisleId: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
     }),
     prisma.unit.findMany({ orderBy: { name: "asc" }, select: { name: true, abbreviation: true } }),
     prisma.utensil.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.tag.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.category.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+    prisma.unitType.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
 
   if (!row) {
@@ -71,12 +72,13 @@ export default async function EditRecipePage({ params }: Props) {
         ingredientOptions={ingredients.map((i) => ({
           name: i.name,
           defaultUnit: i.defaultUnit?.name ?? null,
-          incomplete: !i.defaultUnitId || !i.aisle,
+          incomplete: !i.defaultUnitId || !i.aisleId,
         }))}
         unitOptions={units.map((u) => ({ name: u.name, abbreviation: u.abbreviation }))}
         utensilOptions={utensils.map((u) => u.name)}
         tagOptions={tags.map((t) => t.name)}
         categoryOptions={categories.map((c) => c.name)}
+        unitTypeOptions={unitTypes}
         mediaEnabled={getMediaStore().configured}
         defaultValues={{
           title: recipe.title,

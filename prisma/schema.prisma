@@ -97,10 +97,11 @@ model Ingredient {
   recipeIngredients RecipeIngredient[]
 
   // Catalog metadata (edited from /parametres). `aisle` is the grocery aisle
-  // ("rayon", e.g. "Légume", "Épicerie"; free string validated against AISLES
-  // in lib/catalog). `defaultUnit` pre-fills the unit when the ingredient is
-  // added to a recipe. Both null => the entry shows as "À compléter".
-  aisle         String?
+  // ("rayon", e.g. "Légume", "Épicerie"), an editable referential (model Aisle).
+  // `defaultUnit` pre-fills the unit when the ingredient is added to a recipe.
+  // Both null => the entry shows as "À compléter".
+  aisleId       String?
+  aisle         Aisle?  @relation(fields: [aisleId], references: [id], onDelete: SetNull)
   defaultUnitId String?
   defaultUnit   Unit?   @relation("IngredientDefaultUnit", fields: [defaultUnitId], references: [id], onDelete: SetNull)
 
@@ -119,6 +120,17 @@ model Ingredient {
 
   @@index([category])
   @@index([defaultUnitId])
+  @@index([aisleId])
+}
+
+// Editable referential of grocery aisles ("rayons", e.g. "Légume", "Épicerie").
+// Classifies ingredients; usage = number of ingredients in the aisle. Renaming
+// follows the id (the ingredient relation is unchanged). Managed from
+// /parametres/rayons.
+model Aisle {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  ingredients Ingredient[]
 }
 
 // Catalog of reusable units of measure (e.g. "g", "kg", "ml", "pincée", "unité").
@@ -128,15 +140,27 @@ model Unit {
   recipeIngredients RecipeIngredient[]
 
   // Catalog metadata (edited from /parametres). `abbreviation` is the short
-  // form shown in recipes ("g", "c. à s."); `kind` is the unit family (free
-  // string validated against UNIT_KINDS in lib/catalog). Either null => the
+  // form shown in recipes ("g", "c. à s."); `type` is the unit family (Masse,
+  // Volume…), an editable referential (model UnitType). Either null => the
   // entry shows as "À compléter".
   abbreviation String?
-  kind         String?
+  typeId       String?
+  type         UnitType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
 
   // Ingredients that use this unit as their default (inverse of
   // Ingredient.defaultUnit).
   defaultForIngredients Ingredient[] @relation("IngredientDefaultUnit")
+
+  @@index([typeId])
+}
+
+// Editable referential of unit families ("types d'unité": Masse, Volume…).
+// Groups units; usage = number of units of the type. Managed from
+// /parametres/types-unite.
+model UnitType {
+  id    String @id @default(cuid())
+  name  String @unique
+  units Unit[]
 }
 
 // Explicit Recipe <-> Ingredient join, carrying the quantity and the unit.

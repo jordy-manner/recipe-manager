@@ -34,12 +34,13 @@ All many-to-many relations use **explicit join tables** (project convention).
   `seasonMonths` (`Int[]`, the active months 1–12, used only in MANUAL mode).
 - **Step** — ordered prep steps: `content` (Markdown) + `order`, FK to Recipe.
 - **Ingredient** / **Unit** — reusable catalogs (`name` unique). Catalog fields
-  edited from `/parametres`: Ingredient `aisle?` (grocery "rayon", free string
-  validated against `AISLES` in `lib/catalog`), `defaultUnit?` (FK to Unit, the
-  pre-filled unit), `image?` + `imagePublicId?` (custom photo, priority over the
-  auto Pexels thumbnail). Unit `abbreviation?` + `kind?` (family, `UNIT_KINDS`).
-  An entry is "À compléter" (derived, not stored) when a required field is null
-  (ingredient: aisle/defaultUnit; unit: abbreviation/kind). An ingredient is
+  edited from `/parametres`: Ingredient `aisle?` (grocery "rayon", FK to the
+  **Aisle** referential), `defaultUnit?` (FK to Unit, the pre-filled unit),
+  `image?` + `imagePublicId?` (custom photo, priority over the auto Pexels
+  thumbnail). Unit `abbreviation?` + `type?` (family, FK to the **UnitType**
+  referential). An entry is "À compléter" (derived, not stored) when a required
+  field is null (ingredient: aisleId/defaultUnitId; unit: abbreviation/typeId).
+  An ingredient is
   also a **seasonal produce** when it carries season fields: `slug?` (unique, URL
   key for `/saisons`), `category?` (enum `ProduceCategory` = fruits/legumes/
   herbes/legumineuses; `null` = ordinary ingredient like salt/flour),
@@ -55,6 +56,12 @@ All many-to-many relations use **explicit join tables** (project convention).
   read server-side only, never sent to the client (`lib/settings.ts`).
 - **Tag** + **RecipeTag** — shared tags.
 - **Category** + **RecipeCategory** — a recipe may have several categories (`position`).
+- **Aisle** / **UnitType** — editable referentials (`name` unique) feeding the
+  catalog dropdowns: Aisle classifies ingredients (`Ingredient.aisleId`),
+  UnitType groups units (`Unit.typeId`). Usage = number of related entities;
+  renaming follows the id (the relation is untouched). Managed from
+  `/parametres/{rayons,types-unite}` (Tag/Category likewise from
+  `/parametres/{tags,categories}`).
 
 Catalog seed values (`prisma/seed.ts`): units, ~75 utensils, and 6 categories
 (Plat de résistance, Entrée, Dessert, Accompagnement, Apéritif, Préparation),
@@ -95,8 +102,8 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   currently **stub pages** ("Bientôt disponible", `ComingSoon` component).
   Reached from the mobile "Plus" sheet / desktop "Plus" dropdown.
 - `/parametres` — **settings**, a side-rail shell (`app/parametres/layout.tsx` +
-  `_rail.tsx`, grouped Préférences / Catalogues / Données, sticky, active item
-  `bg-accent-soft text-accent-ink`). `/parametres` redirects to
+  `_rail.tsx`, grouped Préférences / Catalogues / Référentiels / Données, sticky,
+  active item `bg-accent-soft text-accent-ink`). `/parametres` redirects to
   `/parametres/ingredients`. Sub-routes:
   - `/parametres/general` — Pexels API key (server secret, `lib/settings`),
     AI-key placeholder ("À venir").
@@ -108,7 +115,15 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
     compléter" chips, add-on-the-fly, inline edit, usage counter ("N rec."),
     delete (blocked when used) + **merge duplicates** (reassigns the recipe
     relations in a transaction). Ingredients/utensils carry a custom `image`
-    (priority over the auto Pexels thumbnail via `GET /api/pexels`).
+    (priority over the auto Pexels thumbnail via `GET /api/pexels`). The Rayon /
+    Unité par défaut / Type cells are **creatable comboboxes** (`CellCombo`, same
+    "+ Créer" UX as the recipe form): typing a new value upserts it into the
+    referential (or creates a Unit for "Unité par défaut") and selects it.
+  - `/parametres/{rayons,types-unite,tags,categories}` — **referential editors**
+    (`_ref-list.tsx`, client `RefList`): per-list search, add (focused row),
+    inline rename (cascades for free — the relation follows the id), usage
+    counter, delete **blocked server-side when still in use** (lock + toast).
+    Server Actions in `ref-actions.ts` (create deduped accent-insensitively).
   - `/parametres/saisons` — seasonal-data status card (stats + last-check date +
     **"Mettre à jour"** button → `runSeasonUpdate`), sources list, auto-check
     frequency (Manuelle / Hebdomadaire / Mensuelle).
@@ -213,8 +228,10 @@ rendering, which these pages already are).
 - `scripts/seasonality.ts` — CLI (`npm run seasonality -- <cmd>`): `import` (seed from
   the JSON), `refresh-carbon` (Agribalyse), `set <slug>` (edit one), `export` (backup).
 - `lib/media.ts` — media abstraction.
-- `lib/catalog.ts` — **client-safe** catalog constants/helpers (`AISLES`,
-  `UNIT_KINDS`, `norm` accent-insensitive, row types, incomplete derivations).
+- `lib/catalog.ts` — **client-safe** catalog helpers (`norm` accent-insensitive,
+  row types incl. `RefRow`, incomplete derivations). `AISLES` / `UNIT_KINDS` are
+  now **seed defaults only** (the Aisle/UnitType referentials) — runtime options
+  come from the DB and validation is enforced by the FKs.
 - `lib/settings.ts` — server-side `Setting` read/write; `getPexelsKey` (DB then
   env), `pexelsConfigured`, season frequency.
 - `lib/season-sources.ts` — referenced seasonal sources + `getSeasonStats` (DB).
@@ -222,9 +239,12 @@ rendering, which these pages already are).
   (re-apply dataset → derive aisles from category → refresh ADEME carbon → stamp date),
   shared by the manual button (`updateSeasonData`) and the cron route.
 - `app/parametres/` — `layout.tsx` + `_rail.tsx`/`_nav.ts` (rail), per-section
-  pages, `_catalog-table.tsx` (reusable editor), `actions.ts` (catalog CRUD +
-  merge + image), `settings-actions.ts` (Pexels key, season job),
-  `_general-form.tsx`, `_apparence-controls.tsx`, `_season-data.tsx`.
+  pages, `_catalog-table.tsx` (reusable editor + `CellCombo` creatable cells),
+  `_ref-list.tsx` (reusable referential editor `RefList`), `actions.ts` (catalog
+  CRUD + merge + image), `ref-actions.ts` (Aisle/UnitType/Tag/Category CRUD +
+  `createUnitNamed` for the default-unit combobox), `settings-actions.ts`
+  (Pexels key, season job), `_general-form.tsx`, `_apparence-controls.tsx`,
+  `_season-data.tsx`.
 - `app/components/theme.ts` + `theme-script.tsx` — theme/accent tokens + the
   before-paint bootstrap (applies the saved preference, no FOUC).
 - `app/recettes/` — `page.tsx` (list/search), `home-screen` (search UI), `recipe-detail`,

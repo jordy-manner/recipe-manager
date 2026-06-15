@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Icon, type IconName } from "../components/icons";
-import { UNIT_KINDS } from "@/lib/catalog";
 
 // Accessible combobox with an on-the-fly "+ Créer" affordance, used for the
 // ingredient / unit / utensil fields of the recipe form. Search is
@@ -225,15 +224,18 @@ export function FormCombobox({
 
 export function UnitCreateModal({
   name,
+  unitTypes,
   onConfirm,
   onClose,
 }: {
   name: string;
-  onConfirm: (abbreviation: string, kind: string) => void;
+  /** Existing unit types to pick from (the "type" referential). */
+  unitTypes: { id: string; name: string }[];
+  onConfirm: (abbreviation: string, typeId: string | null) => void;
   onClose: () => void;
 }) {
   const [abbr, setAbbr] = useState(name);
-  const [kind, setKind] = useState<string>("Quantité");
+  const [typeId, setTypeId] = useState<string>(unitTypes[0]?.id ?? "");
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -271,7 +273,7 @@ export function UnitCreateModal({
     }
   };
 
-  const confirm = () => onConfirm(abbr.trim() || name, kind);
+  const confirm = () => onConfirm(abbr.trim() || name, typeId || null);
 
   return (
     <div
@@ -319,13 +321,14 @@ export function UnitCreateModal({
         <label className="mt-3.5 block">
           <span className="mb-1.5 block text-[13px] font-bold text-ink">Type</span>
           <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
+            value={typeId}
+            onChange={(e) => setTypeId(e.target.value)}
             className="select-chevron w-full rounded-input border border-line bg-surface px-3 py-2.5 text-[15px] text-ink outline-none focus:border-accent"
           >
-            {UNIT_KINDS.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            <option value="">— À compléter</option>
+            {unitTypes.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
               </option>
             ))}
           </select>

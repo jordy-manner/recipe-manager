@@ -21,8 +21,9 @@ import type { DbCategory } from "@/lib/produce";
 import seasonalityJson from "@/lib/data/seasonality.json";
 import carbonJson from "@/lib/data/carbon-ademe.json";
 
-// Grocery aisle ("rayon", from lib/catalog AISLES) derived from the produce
-// category. Pulses (legumineuses) live in the grocery aisle (dry/canned).
+// Grocery aisle ("rayon") derived from the produce category, by Aisle name
+// (resolved/created in the Aisle referential). Pulses (legumineuses) live in
+// the grocery aisle (dry/canned).
 const AISLE_FOR: Record<DbCategory, string> = {
   fruits: "Fruit",
   legumes: "Légume",
@@ -71,11 +72,22 @@ export async function runSeasonUpdate(
   );
   const imported = ITEMS.length;
 
-  // 2. Derive the aisle from the category, only where it is still unset.
+  // 2. Derive the aisle from the category, only where it is still unset. The
+  //    aisle is a referential (Aisle): resolve/create the row by name, then
+  //    point the matching produce at its id.
   const aisleResults = await Promise.all(
-    (Object.entries(AISLE_FOR) as [DbCategory, string][]).map(([category, aisle]) =>
-      prisma.ingredient.updateMany({ where: { category, aisle: null }, data: { aisle } }),
-    ),
+    (Object.entries(AISLE_FOR) as [DbCategory, string][]).map(async ([category, name]) => {
+      const aisle = await prisma.aisle.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+        select: { id: true },
+      });
+      return prisma.ingredient.updateMany({
+        where: { category, aisleId: null },
+        data: { aisleId: aisle.id },
+      });
+    }),
   );
   const aisleFilled = aisleResults.reduce((sum, r) => sum + r.count, 0);
 

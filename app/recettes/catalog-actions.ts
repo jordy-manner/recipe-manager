@@ -14,7 +14,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { fuzzyKey } from "@/lib/seasons-data";
-import { UNIT_KINDS } from "@/lib/catalog";
 
 export type IngredientEntry = { name: string; defaultUnit: string | null; incomplete: boolean };
 export type UnitEntry = { name: string; abbreviation: string | null };
@@ -26,8 +25,8 @@ export type CreateResult<T> =
 
 const nameSchema = z.string().trim().min(1, "Le nom est obligatoire").max(80);
 
-function ingredientIncomplete(i: { defaultUnitId: string | null; aisle: string | null }): boolean {
-  return !i.defaultUnitId || !i.aisle;
+function ingredientIncomplete(i: { defaultUnitId: string | null; aisleId: string | null }): boolean {
+  return !i.defaultUnitId || !i.aisleId;
 }
 
 /** Create (or reuse a close match for) an ingredient. Name suffices. */
@@ -40,7 +39,7 @@ export async function createIngredientEntry(
   const key = fuzzyKey(name);
 
   const existing = await prisma.ingredient.findMany({
-    select: { name: true, aisle: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
+    select: { name: true, aisleId: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
   });
   const near = existing.find((i) => fuzzyKey(i.name) === key);
   if (near) {
@@ -92,21 +91,19 @@ const unitSchema = z.object({
   // The name (= the typed value) is what recipe rows store and display.
   name: z.string().trim().min(1, "Le nom est obligatoire").max(40),
   abbreviation: z.string().trim().min(1, "L'abréviation est obligatoire").max(20),
-  kind: z
-    .string()
-    .trim()
-    .refine((v) => (UNIT_KINDS as readonly string[]).includes(v), "Type invalide"),
+  // FK to the UnitType referential (null = type to complete later).
+  typeId: z.string().trim().min(1).nullable().optional(),
 });
 
 /** Create (or reuse a close match for) a unit. Abbreviation + type required. */
 export async function createUnitEntry(input: {
   name: string;
   abbreviation: string;
-  kind: string;
+  typeId?: string | null;
 }): Promise<CreateResult<UnitEntry>> {
   const parsed = unitSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  const { name, abbreviation, kind } = parsed.data;
+  const { name, abbreviation, typeId } = parsed.data;
   const key = fuzzyKey(name);
 
   const existing = await prisma.unit.findMany({ select: { name: true, abbreviation: true } });
@@ -121,7 +118,7 @@ export async function createUnitEntry(input: {
 
   try {
     const created = await prisma.unit.create({
-      data: { name, abbreviation, kind },
+      data: { name, abbreviation, typeId: typeId ?? null },
       select: { name: true, abbreviation: true },
     });
     revalidatePath("/parametres/unites");

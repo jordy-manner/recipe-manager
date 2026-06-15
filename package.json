@@ -10,6 +10,7 @@
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
     "seasonality": "tsx scripts/seasonality.ts",
+    "assign-unit-types": "tsx scripts/assign-unit-types.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

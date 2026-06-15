@@ -2,6 +2,17 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.26] — 2026-06-15
+
+- **`assign-unit-types` maintenance script** (`scripts/assign-unit-types.ts`,
+  `npm run assign-unit-types`): assigns the default unit family (UnitType) to the
+  standard units that still have none (g → Masse, ml → Volume…). **Dry-run by
+  default**; `-- --apply` writes. Idempotent and non-destructive — only fills
+  `typeId` where null, never touches recipes. Target the prod DB by passing its
+  pooled `DATABASE_URL` inline (overrides `.env.local`). Lets unit types show
+  their real usage (and lock against deletion) on a DB where the legacy `kind`
+  was never populated.
+
 ## [v0.2.25] — 2026-06-15
 
 - **Editable referentials** (design handoff `referentiels`): the lists feeding

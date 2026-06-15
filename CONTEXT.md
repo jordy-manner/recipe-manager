@@ -227,6 +227,10 @@ rendering, which these pages already are).
   the upsert action + the CLI; admin-time only (never on `/saisons` reads).
 - `scripts/seasonality.ts` — CLI (`npm run seasonality -- <cmd>`): `import` (seed from
   the JSON), `refresh-carbon` (Agribalyse), `set <slug>` (edit one), `export` (backup).
+- `scripts/assign-unit-types.ts` — maintenance CLI (`npm run assign-unit-types`):
+  fills the default `UnitType` for standard units lacking one (dry-run by default,
+  `-- --apply` to write; non-destructive, recipe-safe). Target prod by passing its
+  pooled `DATABASE_URL` inline.
 - `lib/media.ts` — media abstraction.
 - `lib/catalog.ts` — **client-safe** catalog helpers (`norm` accent-insensitive,
   row types incl. `RefRow`, incomplete derivations). `AISLES` / `UNIT_KINDS` are

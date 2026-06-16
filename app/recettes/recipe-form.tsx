@@ -50,9 +50,11 @@ type IngredientRow = {
   // True once the user set the unit (typed or picked), so selecting an
   // ingredient won't overwrite it with the ingredient's default unit.
   unitTouched: boolean;
+  sec: string | null; // client section ID, null = ungrouped
 };
 type UtensilRow = { key: number; name: string; quantity: string };
-type StepRow = { key: number; value: string };
+type StepRow = { key: number; value: string; sec: string | null };
+type SectionRow = { id: string; title: string };
 
 // Catalog options fed to the comboboxes. Ingredients carry their default unit
 // (auto-filled on select) and a derived "incomplete" flag (drives the badge).
@@ -75,14 +77,16 @@ export type RecipeFormValues = {
   carbs: string;
   fat: string;
   imageUrl: string | null;
-  ingredients: { name: string; quantity: string; unit: string; isPrimary?: boolean }[];
+  ingredients: { name: string; quantity: string; unit: string; isPrimary?: boolean; sectionId?: string | null }[];
   utensils: { name: string; quantity: string }[];
-  steps: string[];
+  steps: { content: string; sectionId?: string | null }[] | string[];
   tags: string[];
   categories: string[];
   sources: string[];
   seasonMode: SeasonMode;
   seasonMonths: number[];
+  ingSections?: { id: string; title: string }[];
+  stepSections?: { id: string; title: string }[];
 };
 
 export const EMPTY_RECIPE_VALUES: RecipeFormValues = {
@@ -109,6 +113,8 @@ export const EMPTY_RECIPE_VALUES: RecipeFormValues = {
   sources: [],
   seasonMode: "AUTO",
   seasonMonths: [],
+  ingSections: [],
+  stepSections: [],
 };
 
 const DIFF_LABELS: Record<number, string> = { 1: "Facile", 2: "Moyen", 3: "Difficile" };
@@ -219,15 +225,198 @@ function RemoveButton({ onClick, label, disabled }: { onClick: () => void; label
   );
 }
 
-function AddRowButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function AddRowButton({
+  onClick,
+  children,
+  align = "left",
+}: {
+  onClick: () => void;
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="mt-3 inline-flex items-center gap-2 whitespace-nowrap rounded-input border border-dashed border-line bg-surface px-[18px] py-2.5 text-[14px] font-semibold text-ink-soft transition hover:border-accent hover:bg-accent-soft hover:text-accent"
+      className={`mt-3 inline-flex items-center gap-2 whitespace-nowrap rounded-input border border-dashed border-line bg-surface px-[18px] py-2.5 text-[14px] font-semibold text-ink-soft transition hover:border-accent hover:bg-accent-soft hover:text-accent ${align === "right" ? "ml-auto" : ""}`}
     >
       <Icon name="plus" size={16} /> {children}
     </button>
+  );
+}
+
+/** Sortable section header with title input and remove button. */
+function SectionHead({
+  sec,
+  onTitleChange,
+  onRemove,
+}: {
+  sec: SectionRow;
+  onTitleChange: (title: string) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: sec.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="mb-1 flex items-center gap-2 border-t-2 border-accent-soft pt-3">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Glisser pour réordonner la section"
+        className="grid h-[38px] w-7 shrink-0 cursor-grab touch-none place-items-center rounded-input text-ink-faint transition hover:bg-surface-muted hover:text-ink-soft active:cursor-grabbing"
+      >
+        <Icon name="grip" size={16} />
+      </button>
+      <input
+        type="text"
+        aria-label="Nom de la section"
+        value={sec.title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        placeholder="Nom de la section"
+        className={`${fieldBase} min-w-0 flex-1 font-semibold`}
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Supprimer la section (les lignes sont conservées)"
+        className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-input border border-line bg-surface text-ink-faint transition hover:border-accent hover:bg-accent-soft hover:text-accent"
+      >
+        <Icon name="x" size={16} />
+      </button>
+    </div>
+  );
+}
+
+/** Ingredient row (sortable) — pulled out to avoid a massive inline block. */
+function IngRow({
+  row,
+  updateRow,
+  removeRow,
+  pickIngredient,
+  createIngredient,
+  setPendingUnit,
+  ingredientComboOptions,
+  unitComboOptions,
+  ingredientTodo,
+  ingSections,
+}: {
+  row: IngredientRow;
+  updateRow: (key: number, patch: Partial<IngredientRow>) => void;
+  removeRow: (key: number) => void;
+  pickIngredient: (key: number, name: string) => void;
+  createIngredient: (key: number, name: string) => void;
+  setPendingUnit: (p: { key: number; name: string }) => void;
+  ingredientComboOptions: ComboOption[];
+  unitComboOptions: ComboOption[];
+  ingredientTodo: (name: string) => boolean;
+  ingSections: SectionRow[];
+}) {
+  return (
+    <SortableRow key={row.key} id={row.key} className="flex flex-wrap items-center gap-2.5">
+      <FormCombobox
+        value={row.name}
+        kind="ing"
+        ariaLabel="Ingrédient"
+        placeholder="Rechercher ou créer…"
+        options={ingredientComboOptions}
+        todo={ingredientTodo(row.name)}
+        onPick={(name) => pickIngredient(row.key, name)}
+        onChange={(text) => updateRow(row.key, { name: text })}
+        onCreate={(name) => createIngredient(row.key, name)}
+        className="min-w-[160px] flex-1"
+      />
+      {/* Mirror value + section index for positional submit. */}
+      <input type="hidden" name="ingredientName" value={row.name} />
+      <input
+        type="hidden"
+        name="ingredientSectionIdx"
+        value={row.sec != null ? ingSections.findIndex((s) => s.id === row.sec) : ""}
+      />
+      <input
+        name="ingredientQuantity"
+        type="number"
+        step="any"
+        min="0"
+        placeholder="250"
+        value={row.quantity}
+        onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
+        className={`${fieldBase} w-24`}
+      />
+      <FormCombobox
+        value={row.unit}
+        kind="unit"
+        ariaLabel="Unité"
+        placeholder="Unité"
+        options={unitComboOptions}
+        onPick={(name) => updateRow(row.key, { unit: name, unitTouched: true })}
+        onChange={(text) => updateRow(row.key, { unit: text, unitTouched: true })}
+        onCreate={(name) => setPendingUnit({ key: row.key, name })}
+        className="w-32"
+      />
+      <input type="hidden" name="ingredientUnit" value={row.unit} />
+      <input
+        type="hidden"
+        name="ingredientIsPrimary"
+        value={row.isPrimary ? "true" : "false"}
+      />
+      <button
+        type="button"
+        onClick={() => updateRow(row.key, { isPrimary: !row.isPrimary })}
+        aria-pressed={row.isPrimary}
+        title="Marquer comme ingrédient principal"
+        aria-label="Marquer comme ingrédient principal"
+        className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-input border transition ${
+          row.isPrimary
+            ? "border-transparent bg-accent-soft text-accent"
+            : "border-line bg-surface text-ink-faint hover:border-ink-faint hover:text-ink-soft"
+        }`}
+      >
+        <Icon name="star" size={16} fill={row.isPrimary ? "currentColor" : "none"} />
+      </button>
+      <RemoveButton onClick={() => removeRow(row.key)} label="Supprimer cet ingrédient" />
+    </SortableRow>
+  );
+}
+
+/** Step row (sortable). */
+function StepSortableRow({
+  step,
+  num,
+  sectionIdx,
+  updateStep,
+  removeStep,
+}: {
+  step: StepRow;
+  num: number;
+  sectionIdx: number | null;
+  updateStep: (key: number, value: string) => void;
+  removeStep: (key: number) => void;
+}) {
+  return (
+    <SortableRow
+      id={step.key}
+      className="flex items-start gap-2.5"
+      handleClassName="mt-2 h-7 w-7"
+    >
+      <span className="mt-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[14px] font-bold text-accent-ink">
+        {num}
+      </span>
+      <StepEditor
+        name="step"
+        value={step.value}
+        onChange={(value) => updateStep(step.key, value)}
+        placeholder={`Décrivez l'étape ${num}…`}
+      />
+      {/* Positional section index (parallel to step[] inputs). */}
+      <input type="hidden" name="stepSectionIdx" value={sectionIdx != null ? sectionIdx : ""} />
+      <RemoveButton onClick={() => removeStep(step.key)} label="Supprimer cette étape" />
+    </SortableRow>
   );
 }
 
@@ -310,28 +499,92 @@ export function RecipeForm({
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  // Ingredient rows (at least one visible).
-  const initialRows = defaultValues.ingredients.length
-    ? defaultValues.ingredients
-    : [{ name: "", quantity: "", unit: "", isPrimary: false }];
-  const keyCounter = useRef(initialRows.length);
-  const [rows, setRows] = useState<IngredientRow[]>(
-    initialRows.map((r, i) => ({ key: i, isPrimary: false, unitTouched: !!r.unit, ...r })),
+  // Section state (client-side IDs, independent for ingredients and steps).
+  const ingSectionKey = useRef(0);
+  const stepSectionKey = useRef(0);
+  const [ingSections, setIngSections] = useState<SectionRow[]>(
+    (defaultValues.ingSections ?? []).map((s) => ({ id: s.id, title: s.title })),
   );
+  const [stepSections, setStepSections] = useState<SectionRow[]>(
+    (defaultValues.stepSections ?? []).map((s) => ({ id: s.id, title: s.title })),
+  );
+
+  const addIngSection = () => {
+    const id = `is-${ingSectionKey.current++}`;
+    setIngSections((ss) => [...ss, { id, title: "" }]);
+  };
+  const updateIngSection = (id: string, title: string) =>
+    setIngSections((ss) => ss.map((s) => (s.id === id ? { ...s, title } : s)));
+  const removeIngSection = (id: string) => {
+    setIngSections((ss) => ss.filter((s) => s.id !== id));
+    setRows((rs) => rs.map((r) => (r.sec === id ? { ...r, sec: null } : r)));
+  };
+  const reorderIngSections = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const activeStr = String(active.id);
+    const overStr = String(over.id);
+    if (!activeStr.startsWith("is-") || !overStr.startsWith("is-")) return;
+    setIngSections((ss) => {
+      const from = ss.findIndex((s) => s.id === activeStr);
+      const to = ss.findIndex((s) => s.id === overStr);
+      return from === -1 || to === -1 ? ss : arrayMove(ss, from, to);
+    });
+  };
+
+  const addStepSection = () => {
+    const id = `ss-${stepSectionKey.current++}`;
+    setStepSections((ss) => [...ss, { id, title: "" }]);
+  };
+  const updateStepSection = (id: string, title: string) =>
+    setStepSections((ss) => ss.map((s) => (s.id === id ? { ...s, title } : s)));
+  const removeStepSection = (id: string) => {
+    setStepSections((ss) => ss.filter((s) => s.id !== id));
+    setSteps((ss) => ss.map((s) => (s.sec === id ? { ...s, sec: null } : s)));
+  };
+  const reorderStepSections = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const activeStr = String(active.id);
+    const overStr = String(over.id);
+    if (!activeStr.startsWith("ss-") || !overStr.startsWith("ss-")) return;
+    setStepSections((ss) => {
+      const from = ss.findIndex((s) => s.id === activeStr);
+      const to = ss.findIndex((s) => s.id === overStr);
+      return from === -1 || to === -1 ? ss : arrayMove(ss, from, to);
+    });
+  };
+
+  // Ingredient rows (empty by default — user starts from scratch or adds sections).
+  const initialRows = defaultValues.ingredients.map((r, i) => ({
+    key: i,
+    isPrimary: r.isPrimary ?? false,
+    unitTouched: !!r.unit,
+    name: r.name,
+    quantity: r.quantity,
+    unit: r.unit,
+    sec: r.sectionId ?? null,
+  }));
+  const keyCounter = useRef(initialRows.length);
+  const [rows, setRows] = useState<IngredientRow[]>(initialRows);
   const updateRow = (key: number, patch: Partial<IngredientRow>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-  const addRow = () =>
+  const addRow = (sec: string | null = null) =>
     setRows((rs) => [
       ...rs,
-      { key: keyCounter.current++, name: "", quantity: "", unit: "", isPrimary: false, unitTouched: false },
+      { key: keyCounter.current++, name: "", quantity: "", unit: "", isPrimary: false, unitTouched: false, sec },
     ]);
   const removeRow = (key: number) =>
-    setRows((rs) => (rs.length > 1 ? rs.filter((r) => r.key !== key) : rs));
+    setRows((rs) => rs.filter((r) => r.key !== key));
   const reorderRows = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
+    const activeId = active.id as number;
+    const overId = over.id as number;
+    // Only reorder rows within the same section.
     setRows((rs) => {
-      const from = rs.findIndex((r) => r.key === active.id);
-      const to = rs.findIndex((r) => r.key === over.id);
+      const fromRow = rs.find((r) => r.key === activeId);
+      const toRow = rs.find((r) => r.key === overId);
+      if (!fromRow || !toRow || fromRow.sec !== toRow.sec) return rs;
+      const from = rs.findIndex((r) => r.key === activeId);
+      const to = rs.findIndex((r) => r.key === overId);
       return from === -1 || to === -1 ? rs : arrayMove(rs, from, to);
     });
   };
@@ -357,22 +610,33 @@ export function RecipeForm({
     });
   };
 
-  // Step rows (Markdown, at least one visible).
-  const initialSteps = defaultValues.steps.length ? defaultValues.steps : [""];
-  const stepKey = useRef(initialSteps.length);
-  const [steps, setSteps] = useState<StepRow[]>(
-    initialSteps.map((value, i) => ({ key: i, value })),
+  // Step rows (Markdown, empty by default).
+  const initialSteps = (defaultValues.steps as (string | { content: string; sectionId?: string | null })[]).map(
+    (s, i) => ({
+      key: i,
+      value: typeof s === "string" ? s : s.content,
+      sec: typeof s === "string" ? null : (s.sectionId ?? null),
+    }),
   );
+  const stepKey = useRef(initialSteps.length);
+  const [steps, setSteps] = useState<StepRow[]>(initialSteps);
   const updateStep = (key: number, value: string) =>
     setSteps((ss) => ss.map((s) => (s.key === key ? { ...s, value } : s)));
-  const addStep = () => setSteps((ss) => [...ss, { key: stepKey.current++, value: "" }]);
+  const addStep = (sec: string | null = null) =>
+    setSteps((ss) => [...ss, { key: stepKey.current++, value: "", sec }]);
   const removeStep = (key: number) =>
-    setSteps((ss) => (ss.length > 1 ? ss.filter((s) => s.key !== key) : ss));
+    setSteps((ss) => ss.filter((s) => s.key !== key));
   const reorderSteps = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
+    const activeId = active.id as number;
+    const overId = over.id as number;
+    // Only reorder steps within the same section.
     setSteps((ss) => {
-      const from = ss.findIndex((s) => s.key === active.id);
-      const to = ss.findIndex((s) => s.key === over.id);
+      const fromStep = ss.find((s) => s.key === activeId);
+      const toStep = ss.find((s) => s.key === overId);
+      if (!fromStep || !toStep || fromStep.sec !== toStep.sec) return ss;
+      const from = ss.findIndex((s) => s.key === activeId);
+      const to = ss.findIndex((s) => s.key === overId);
       return from === -1 || to === -1 ? ss : arrayMove(ss, from, to);
     });
   };
@@ -484,10 +748,7 @@ export function RecipeForm({
       if (res.reused) toast(`« ${name} » existe déjà — « ${entry.name} » réutilisé.`);
     });
 
-  const valid =
-    f.title.trim().length > 0 &&
-    rows.some((r) => r.name.trim().length > 0) &&
-    steps.some((s) => s.value.trim().length > 0);
+  const valid = f.title.trim().length > 0;
 
   return (
     <form
@@ -733,7 +994,12 @@ export function RecipeForm({
         </Block>
 
         {/* 4. Ingredients */}
-        <Block title="Ingrédients *">
+        <Block title="Ingrédients">
+          {/* Hidden inputs for ingredient section data (positional arrays). */}
+          {ingSections.map((s) => (
+            <input key={s.id} type="hidden" name="ingSectionTitle" value={s.title} />
+          ))}
+
           <div className="mb-2 hidden items-center gap-2.5 px-0.5 text-[12px] font-bold uppercase tracking-wider text-ink-faint sm:flex">
             <span className="w-7" />
             <span className="min-w-0 flex-1">Ingrédient</span>
@@ -744,88 +1010,92 @@ export function RecipeForm({
             </span>
             <span className="w-[38px]" />
           </div>
+
+          {/* One DndContext handles both section reorder and row reorder. */}
           <DndContext
             id="dnd-ingredients"
             sensors={sensors}
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
-            onDragEnd={reorderRows}
+            onDragEnd={(e) => {
+              const activeStr = String(e.active.id);
+              if (activeStr.startsWith("is-")) {
+                reorderIngSections(e);
+              } else {
+                reorderRows(e);
+              }
+            }}
           >
-            <SortableContext items={rows.map((r) => r.key)} strategy={verticalListSortingStrategy}>
+            {/* Ungrouped rows (no section) rendered first. */}
+            <SortableContext
+              items={rows.filter((r) => r.sec === null).map((r) => r.key)}
+              strategy={verticalListSortingStrategy}
+            >
               <div className="flex flex-col gap-2.5">
-                {rows.map((row) => (
-                  <SortableRow
+                {rows.filter((r) => r.sec === null).map((row) => (
+                  <IngRow
                     key={row.key}
-                    id={row.key}
-                    className="flex flex-wrap items-center gap-2.5"
-                  >
-                    <FormCombobox
-                      value={row.name}
-                      kind="ing"
-                      ariaLabel="Ingrédient"
-                      placeholder="Rechercher ou créer…"
-                      options={ingredientComboOptions}
-                      todo={ingredientTodo(row.name)}
-                      onPick={(name) => pickIngredient(row.key, name)}
-                      onChange={(text) => updateRow(row.key, { name: text })}
-                      onCreate={(name) => createIngredient(row.key, name)}
-                      className="min-w-[160px] flex-1"
-                    />
-                    {/* Custom control → mirror the value for positional submit. */}
-                    <input type="hidden" name="ingredientName" value={row.name} />
-                    <input
-                      name="ingredientQuantity"
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="250"
-                      value={row.quantity}
-                      onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
-                      className={`${fieldBase} w-24`}
-                    />
-                    <FormCombobox
-                      value={row.unit}
-                      kind="unit"
-                      ariaLabel="Unité"
-                      placeholder="Unité"
-                      options={unitComboOptions}
-                      onPick={(name) => updateRow(row.key, { unit: name, unitTouched: true })}
-                      onChange={(text) => updateRow(row.key, { unit: text, unitTouched: true })}
-                      onCreate={(name) => setPendingUnit({ key: row.key, name })}
-                      className="w-32"
-                    />
-                    {/* Positional submission: one value per row, per field. */}
-                    <input type="hidden" name="ingredientUnit" value={row.unit} />
-                    <input
-                      type="hidden"
-                      name="ingredientIsPrimary"
-                      value={row.isPrimary ? "true" : "false"}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateRow(row.key, { isPrimary: !row.isPrimary })}
-                      aria-pressed={row.isPrimary}
-                      title="Marquer comme ingrédient principal"
-                      aria-label="Marquer comme ingrédient principal"
-                      className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-input border transition ${
-                        row.isPrimary
-                          ? "border-transparent bg-accent-soft text-accent"
-                          : "border-line bg-surface text-ink-faint hover:border-ink-faint hover:text-ink-soft"
-                      }`}
-                    >
-                      <Icon name="star" size={16} fill={row.isPrimary ? "currentColor" : "none"} />
-                    </button>
-                    <RemoveButton
-                      onClick={() => removeRow(row.key)}
-                      label="Supprimer cet ingrédient"
-                      disabled={rows.length <= 1}
-                    />
-                  </SortableRow>
+                    row={row}
+                    updateRow={updateRow}
+                    removeRow={removeRow}
+                    pickIngredient={pickIngredient}
+                    createIngredient={createIngredient}
+                    setPendingUnit={setPendingUnit}
+                    ingredientComboOptions={ingredientComboOptions}
+                    unitComboOptions={unitComboOptions}
+                    ingredientTodo={ingredientTodo}
+                    ingSections={ingSections}
+                  />
                 ))}
               </div>
             </SortableContext>
+
+            {/* Sections with their rows. */}
+            <SortableContext
+              items={ingSections.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {ingSections.map((sec) => (
+                <div key={sec.id} className="mt-4">
+                  <SectionHead
+                    sec={sec}
+                    onTitleChange={(t) => updateIngSection(sec.id, t)}
+                    onRemove={() => removeIngSection(sec.id)}
+                  />
+                  <SortableContext
+                    items={rows.filter((r) => r.sec === sec.id).map((r) => r.key)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="mt-2.5 flex flex-col gap-2.5 pl-0">
+                      {rows.filter((r) => r.sec === sec.id).map((row) => (
+                        <IngRow
+                          key={row.key}
+                          row={row}
+                          updateRow={updateRow}
+                          removeRow={removeRow}
+                          pickIngredient={pickIngredient}
+                          createIngredient={createIngredient}
+                          setPendingUnit={setPendingUnit}
+                          ingredientComboOptions={ingredientComboOptions}
+                          unitComboOptions={unitComboOptions}
+                          ingredientTodo={ingredientTodo}
+                          ingSections={ingSections}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                  <AddRowButton onClick={() => addRow(sec.id)}>Ajouter un ingrédient</AddRowButton>
+                </div>
+              ))}
+            </SortableContext>
           </DndContext>
-          <AddRowButton onClick={addRow}>Ajouter un ingrédient</AddRowButton>
+
+          {/* Block footer: ungrouped add (left) + add section (right). */}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <AddRowButton onClick={() => addRow(null)}>Ajouter un ingrédient</AddRowButton>
+            <AddRowButton onClick={addIngSection} align="right">Ajouter une section</AddRowButton>
+          </div>
+
           <p className="mt-3 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-ink-faint">
             <Icon name="star" size={14} className="mt-0.5 shrink-0 text-accent" fill="currentColor" />
             Les ingrédients marqués comme principaux (★) sont utilisés pour la détection
@@ -902,43 +1172,93 @@ export function RecipeForm({
         </Block>
 
         {/* 5. Steps */}
-        <Block title="Étapes de préparation *">
+        <Block title="Étapes de préparation">
+          {/* Hidden inputs for step section data. */}
+          {stepSections.map((s) => (
+            <input key={s.id} type="hidden" name="stepSectionTitle" value={s.title} />
+          ))}
+
           <DndContext
             id="dnd-steps"
             sensors={sensors}
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
-            onDragEnd={reorderSteps}
+            onDragEnd={(e) => {
+              const activeStr = String(e.active.id);
+              if (activeStr.startsWith("ss-")) {
+                reorderStepSections(e);
+              } else {
+                reorderSteps(e);
+              }
+            }}
           >
-            <SortableContext items={steps.map((s) => s.key)} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-3">
-                {steps.map((step, i) => (
-                  <SortableRow
-                    key={step.key}
-                    id={step.key}
-                    className="flex items-start gap-2.5"
-                    handleClassName="mt-2 h-7 w-7"
-                  >
-                    <span className="mt-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[14px] font-bold text-accent-ink">
-                      {i + 1}
-                    </span>
-                    <StepEditor
-                      name="step"
-                      value={step.value}
-                      onChange={(value) => updateStep(step.key, value)}
-                      placeholder={`Décrivez l'étape ${i + 1}…`}
+            {/* Ungrouped steps (no section) rendered first. */}
+            {(() => {
+              const nullSteps = steps.filter((s) => s.sec === null);
+              return (
+                <SortableContext
+                  items={nullSteps.map((s) => s.key)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex flex-col gap-3">
+                    {nullSteps.map((step, i) => (
+                      <StepSortableRow
+                        key={step.key}
+                        step={step}
+                        num={i + 1}
+                        sectionIdx={null}
+                        updateStep={updateStep}
+                        removeStep={removeStep}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              );
+            })()}
+
+            {/* Sections with their steps, each restarting numbering at 1. */}
+            <SortableContext
+              items={stepSections.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {stepSections.map((sec, secIdx) => {
+                const secSteps = steps.filter((s) => s.sec === sec.id);
+                return (
+                  <div key={sec.id} className="mt-4">
+                    <SectionHead
+                      sec={sec}
+                      onTitleChange={(t) => updateStepSection(sec.id, t)}
+                      onRemove={() => removeStepSection(sec.id)}
                     />
-                    <RemoveButton
-                      onClick={() => removeStep(step.key)}
-                      label="Supprimer cette étape"
-                      disabled={steps.length <= 1}
-                    />
-                  </SortableRow>
-                ))}
-              </div>
+                    <SortableContext
+                      items={secSteps.map((s) => s.key)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="mt-2.5 flex flex-col gap-3">
+                        {secSteps.map((step, i) => (
+                          <StepSortableRow
+                            key={step.key}
+                            step={step}
+                            num={i + 1}
+                            sectionIdx={secIdx}
+                            updateStep={updateStep}
+                            removeStep={removeStep}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                    <AddRowButton onClick={() => addStep(sec.id)}>Ajouter une étape</AddRowButton>
+                  </div>
+                );
+              })}
             </SortableContext>
           </DndContext>
-          <AddRowButton onClick={addStep}>Ajouter une étape</AddRowButton>
+
+          {/* Block footer: ungrouped add (left) + add section (right). */}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <AddRowButton onClick={() => addStep(null)}>Ajouter une étape</AddRowButton>
+            <AddRowButton onClick={addStepSection} align="right">Ajouter une section</AddRowButton>
+          </div>
         </Block>
 
         {/* 6. Sources — where the recipe comes from (URL or free text). */}

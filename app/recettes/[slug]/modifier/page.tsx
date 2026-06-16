@@ -34,6 +34,8 @@ export default async function EditRecipePage({ params }: Props) {
         },
         recipeSteps: { orderBy: { order: "asc" } },
         recipeSources: { orderBy: { position: "asc" } },
+        ingredientSections: { orderBy: { position: "asc" } },
+        stepSections: { orderBy: { position: "asc" } },
       },
     }),
     prisma.ingredient.findMany({
@@ -97,11 +99,14 @@ export default async function EditRecipePage({ params }: Props) {
           carbs: recipe.carbs?.toString() ?? "",
           fat: recipe.fat?.toString() ?? "",
           imageUrl: recipe.imageUrl,
+          ingSections: recipe.ingredientSections,
+          stepSections: recipe.stepSections,
           ingredients: recipe.ingredients.map((i) => ({
             name: i.name,
             quantity: i.quantity?.toString() ?? "",
             unit: i.unit ?? "",
             isPrimary: i.isPrimary,
+            sectionId: i.sectionId,
           })),
           utensils: recipe.utensils.map((u) => ({
             name: u.name,

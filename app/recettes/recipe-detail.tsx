@@ -36,9 +36,11 @@ export type RecipeDetailData = {
   fat: number | null;
   tags: string[];
   categories: string[];
-  ingredients: { name: string; quantity: number | null; unit: string | null }[];
+  ingSections: { id: string; title: string }[];
+  stepSections: { id: string; title: string }[];
+  ingredients: { name: string; quantity: number | null; unit: string | null; sectionId: string | null }[];
   utensils: { name: string; quantity: number | null }[];
-  steps: string[];
+  steps: { content: string; sectionId: string | null }[];
   sources: { value: string; kind: "url" | "text" }[];
 };
 
@@ -219,23 +221,27 @@ export function RecipeDetail({
           </div>
 
           {recipe.ingredients.length > 0 ? (
-            <ul className="flex flex-col">
-              {recipe.ingredients.map((ing, i) => {
-                const qty =
-                  ing.quantity != null ? fmtQty(ing.quantity * factor) : null;
+            <div className="flex flex-col">
+              {/* Ungrouped ingredients first. */}
+              {recipe.ingredients
+                .filter((ing) => ing.sectionId === null)
+                .map((ing, i) => (
+                  <IngLine key={i} ing={ing} factor={factor} />
+                ))}
+              {/* Sectioned ingredients. */}
+              {recipe.ingSections.map((sec) => {
+                const secIngs = recipe.ingredients.filter((ing) => ing.sectionId === sec.id);
+                if (!secIngs.length) return null;
                 return (
-                  <li
-                    key={i}
-                    className="flex items-baseline gap-3.5 border-b border-line-soft py-2.5 last:border-0"
-                  >
-                    <span className="min-w-[72px] shrink-0 font-mono text-[13.5px] font-medium text-accent-ink">
-                      {[qty, ing.unit].filter(Boolean).join(" ")}
-                    </span>
-                    <span className="text-[15px] text-ink">{ing.name}</span>
-                  </li>
+                  <div key={sec.id}>
+                    <SectionLabel title={sec.title} />
+                    {secIngs.map((ing, i) => (
+                      <IngLine key={i} ing={ing} factor={factor} />
+                    ))}
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           ) : (
             <p className="text-sm text-ink-faint">Aucun ingrédient.</p>
           )}
@@ -289,37 +295,42 @@ export function RecipeDetail({
         <section className="min-w-0">
           <h2 className="mb-4 font-display text-[24px] font-medium">Préparation</h2>
           {recipe.steps.length > 0 ? (
-            <ol className="flex flex-col gap-3.5">
-              {recipe.steps.map((s, i) => {
-                const isDone = done[i];
-                return (
-                  <li
+            <div className="flex flex-col gap-3.5">
+              {/* Ungrouped steps first. */}
+              {(() => {
+                const nullSteps = recipe.steps.filter((s) => s.sectionId === null);
+                return nullSteps.map((s, i) => (
+                  <StepItem
                     key={i}
-                    onClick={() => setDone((d) => ({ ...d, [i]: !d[i] }))}
-                    className={`flex cursor-pointer items-start gap-4 rounded-card border p-5 transition ${
-                      isDone
-                        ? "border-line-soft bg-surface-muted"
-                        : "border-line-soft bg-surface hover:border-line"
-                    }`}
-                  >
-                    <span
-                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[15px] font-bold transition ${
-                        isDone ? "bg-veg text-white" : "bg-accent-soft text-accent-ink"
-                      }`}
-                    >
-                      {isDone ? <Icon name="check" size={16} /> : i + 1}
-                    </span>
-                    <div
-                      className={`pt-1 text-[16px] leading-relaxed [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
-                        isDone ? "text-ink-faint line-through" : "text-ink"
-                      }`}
-                    >
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{s}</ReactMarkdown>
-                    </div>
-                  </li>
+                    step={s}
+                    num={i + 1}
+                    globalIdx={recipe.steps.indexOf(s)}
+                    done={done}
+                    setDone={setDone}
+                  />
+                ));
+              })()}
+              {/* Sectioned steps with restarted numbering. */}
+              {recipe.stepSections.map((sec) => {
+                const secSteps = recipe.steps.filter((s) => s.sectionId === sec.id);
+                if (!secSteps.length) return null;
+                return (
+                  <div key={sec.id} className="flex flex-col gap-3.5">
+                    <SectionLabel title={sec.title} />
+                    {secSteps.map((s, i) => (
+                      <StepItem
+                        key={i}
+                        step={s}
+                        num={i + 1}
+                        globalIdx={recipe.steps.indexOf(s)}
+                        done={done}
+                        setDone={setDone}
+                      />
+                    ))}
+                  </div>
                 );
               })}
-            </ol>
+            </div>
           ) : (
             <p className="text-ink-soft">Aucune étape renseignée.</p>
           )}
@@ -366,6 +377,79 @@ export function RecipeDetail({
         </div>
       )}
     </main>
+  );
+}
+
+/** Separator between ingredient/step sections (accent rule + label). */
+function SectionLabel({ title }: { title: string }) {
+  return (
+    <div className="mb-1 mt-3 flex items-center gap-3 border-t-2 border-accent-soft pt-2.5">
+      <span className="text-[12.5px] font-bold uppercase tracking-[0.08em] text-accent-ink">
+        {title || "—"}
+      </span>
+    </div>
+  );
+}
+
+/** Single ingredient line with scaled quantity. */
+function IngLine({
+  ing,
+  factor,
+}: {
+  ing: { name: string; quantity: number | null; unit: string | null };
+  factor: number;
+}) {
+  const qty = ing.quantity != null ? fmtQty(ing.quantity * factor) : null;
+  return (
+    <div className="flex items-baseline gap-3.5 border-b border-line-soft py-2.5 last:border-0">
+      <span className="min-w-[72px] shrink-0 font-mono text-[13.5px] font-medium text-accent-ink">
+        {[qty, ing.unit].filter(Boolean).join(" ")}
+      </span>
+      <span className="text-[15px] text-ink">{ing.name}</span>
+    </div>
+  );
+}
+
+/** Single step card (checkable). `globalIdx` is the step's position in the full
+ *  array, used as a stable key for the `done` state map. */
+function StepItem({
+  step,
+  num,
+  globalIdx,
+  done,
+  setDone,
+}: {
+  step: { content: string };
+  num: number;
+  globalIdx: number;
+  done: Record<number, boolean>;
+  setDone: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+}) {
+  const isDone = done[globalIdx];
+  return (
+    <div
+      onClick={() => setDone((d) => ({ ...d, [globalIdx]: !d[globalIdx] }))}
+      className={`flex cursor-pointer items-start gap-4 rounded-card border p-5 transition ${
+        isDone
+          ? "border-line-soft bg-surface-muted"
+          : "border-line-soft bg-surface hover:border-line"
+      }`}
+    >
+      <span
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[15px] font-bold transition ${
+          isDone ? "bg-veg text-white" : "bg-accent-soft text-accent-ink"
+        }`}
+      >
+        {isDone ? <Icon name="check" size={16} /> : num}
+      </span>
+      <div
+        className={`pt-1 text-[16px] leading-relaxed [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+          isDone ? "text-ink-faint line-through" : "text-ink"
+        }`}
+      >
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{step.content}</ReactMarkdown>
+      </div>
+    </div>
   );
 }
 

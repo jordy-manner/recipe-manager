@@ -32,7 +32,8 @@ All many-to-many relations use **explicit join tables** (project convention).
   `imageUrl?` + `imagePublicId?` (Cloudinary), `createdAt`, `updatedAt`,
   `seasonMode` (enum **SeasonMode** `AUTO | MANUAL | ALWAYS`, default `AUTO`) +
   `seasonMonths` (`Int[]`, the active months 1–12, used only in MANUAL mode).
-- **Step** — ordered prep steps: `content` (Markdown) + `order`, FK to Recipe.
+- **Step** — ordered prep steps: `content` (Markdown) + `order` + `sectionId?` (FK to
+  StepSection, nullable), FK to Recipe.
 - **RecipeSource** — where the recipe comes from: `value` + `kind` (enum
   `SourceKind` `url | text`, derived from the value) + `position`, FK to Recipe
   (owned, like Step). Edited from the form's "Sources" section.
@@ -50,8 +51,12 @@ All many-to-many relations use **explicit join tables** (project convention).
   `months Int[]`, `ecv?` + `ecvSource?` (ADEME Agribalyse carbon),
   `seasonUpdatedAt?`. Editable from the app (Server Actions) and a CLI — this is
   the source of truth for `/saisons`.
+- **IngredientSection** / **StepSection** — named groups within a recipe (e.g. "Tangzhong",
+  "Pâte à pain"), owned by Recipe (title, position). Two independent sets: ingredient
+  sections and step sections. Deleting a section NULLs its rows (lines are preserved).
 - **RecipeIngredient** — join carrying `quantity?` (Float), `unitId?`, `position`,
-  `isPrimary` (bool, default false): "main" ingredients drive AUTO seasonality.
+  `isPrimary` (bool, default false), `sectionId?` (FK to IngredientSection, nullable):
+  "main" ingredients drive AUTO seasonality.
 - **Utensil** + **RecipeUtensil** — join carrying `quantity?` (Int), `position`.
   Utensil also has a catalog `image?` + `imagePublicId?` (edited from `/parametres`).
 - **Setting** — server-side key/value store (`key` PK, `value`, `updatedAt`).

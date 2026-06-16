@@ -57,11 +57,13 @@ async function createIngredients(
 ) {
   const rows = recipeIngredientsCreate(input);
   for (let i = 0; i < rows.length; i++) {
+    const sectionId = resolveSectionId(input.ingredients[i]?.sectionIdx, ingSectionIds);
     await tx.recipeIngredient.create({
       data: {
         ...rows[i],
-        recipeId,
-        sectionId: resolveSectionId(input.ingredients[i]?.sectionIdx, ingSectionIds),
+        // Use relational connect to stay consistent with ingredient/unit connectOrCreate.
+        recipe: { connect: { id: recipeId } },
+        ...(sectionId ? { section: { connect: { id: sectionId } } } : {}),
       },
     });
   }
@@ -76,11 +78,12 @@ async function createSteps(
 ) {
   const rows = recipeStepsCreate(input);
   for (let i = 0; i < rows.length; i++) {
+    const sectionId = resolveSectionId(input.stepSectionIdxs[i], stepSectionIds);
     await tx.step.create({
       data: {
         ...rows[i],
-        recipeId,
-        sectionId: resolveSectionId(input.stepSectionIdxs[i], stepSectionIds),
+        recipe: { connect: { id: recipeId } },
+        ...(sectionId ? { section: { connect: { id: sectionId } } } : {}),
       },
     });
   }

@@ -17,7 +17,10 @@ All notable changes to the project, by release. Versions follow the `vMAJOR.MINO
 - **Recipe sections**: `IngredientSection` and `StepSection` models added to the
   schema — named groups for ingredients and steps within a recipe (e.g. "Tangzhong",
   "Pâte à pain"). Sections use `SetNull` on delete so ingredients/steps are never
-  lost when a section is removed.
+  lost. Form: empty by default, "Ajouter une section" button per block, drag-reorder
+  section headers, step numbering restarts at 1 per section. Detail page renders
+  section sub-headings with an accent rule under Ingrédients and Préparation; the
+  servings scaler scales all quantities across sections.
 
 ## [v0.3.5] — 2026-06-16
 

@@ -34,6 +34,8 @@ export default async function RecipeDetailPage({ params }: Props) {
       },
       recipeSteps: { orderBy: { order: "asc" } },
       recipeSources: { orderBy: { position: "asc" } },
+      ingredientSections: { orderBy: { position: "asc" } },
+      stepSections: { orderBy: { position: "asc" } },
     },
   });
 
@@ -98,10 +100,13 @@ export default async function RecipeDetailPage({ params }: Props) {
     fat: flat.fat,
     tags: flat.tags.map((t) => t.name),
     categories: flat.categories.map((c) => c.name),
+    ingSections: flat.ingredientSections,
+    stepSections: flat.stepSections,
     ingredients: flat.ingredients.map((i) => ({
       name: i.name,
       quantity: i.quantity,
       unit: i.unit,
+      sectionId: i.sectionId,
     })),
     utensils: flat.utensils.map((u) => ({ name: u.name, quantity: u.quantity })),
     steps: flat.steps,

@@ -2,6 +2,20 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.10] — 2026-06-17
+
+- **nightshift skill**: new `/nightshift` command — autonomously processes selected GitHub issues overnight, each in its own tmux window running a Claude agent. Monitoring via GitHub issue comments (priority), ntfy.sh push notifications, and optional ttyd web terminal.
+- **nightshift — nightshift-bot**: all GitHub operations (issue comments, PR creation, label management) use a dedicated `nightshift-bot` GitHub App token (`nightshift-token` CLI), keeping bot activity separate from the main account.
+- **nightshift — fix mode**: issues labeled `hasPR` with `Status:Needs Work` on their PR are re-processed in "fix mode" — Claude reads PR review comments and applies only the requested corrections, then swaps `Status:Needs Work` → `Status:Reviewed`.
+- **nightshift — Work in Progress label**: WIP label applied to issue/PR at start, removed on completion.
+- **nightshift — structured PR body**: generated PR includes issue context, problem summary, changes list, and acceptance criteria checkboxes.
+- **nightshift — port collision fix**: port auto-detected from `.port` files across sibling worktrees; existing worktrees reuse their port.
+- **nightshift — wrapper script**: Claude invoked via a wrapper shell script to prevent numbered lines from being executed as commands after Claude exits.
+- **nightshift — QR code**: final report includes a QR code for the ntfy monitoring URL.
+- **run-dev skill**: new `/run-dev` command — starts the dev server on the worktree's auto-detected port.
+- **task-new skill**: renamed from `new-task`; port auto-detection integrated.
+- **Skills**: English enforced for all GitHub interactions (comments, PR bodies, commit messages).
+
 ## [v0.3.9] — 2026-06-16
 
 - **Skills versioned**: `.claude/skills/` (handoff, new-task, preview-release, prod-release) are now tracked in git so all worktrees and Claude windows share the same workflow commands.

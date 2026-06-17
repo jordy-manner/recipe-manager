@@ -163,6 +163,14 @@ GH_TOKEN=$NIGHTSHIFT_TOKEN gh issue comment {numéro} \
   --repo jordy-manner/recipe-manager \
   --body "🌙 **Night shift started** — Claude is autonomously implementing this issue.
 Worktree: \`{slug}/\` · Dev port: \`{port}\`"
+
+# mode fix uniquement : PR existe déjà → WIP sur la PR
+# mode normal : WIP posé sur la PR après sa création (voir step 5 du prompt)
+if [ "{mode}" = "fix" ]; then
+  GH_TOKEN=$NIGHTSHIFT_TOKEN gh issue edit {pr_number} \
+    --repo jordy-manner/recipe-manager \
+    --add-label "Work in Progress"
+fi
 ```
 
 Notification ntfy globale :
@@ -193,7 +201,7 @@ Si `mode == fix` (PR existante avec `Status:Needs Work`) : le prompt inclut en p
 MODE FIX — Cette issue a une PR existante avec des change requests.
 Lis d'abord tous les comments de la PR #{pr_number} pour comprendre ce qui doit être corrigé :
   GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/recipe-manager --comments
-Applique uniquement les corrections demandées. Retire le label Status:Needs Work et ajoute Status:Renewed sur la PR une fois corrigé.
+Applique uniquement les corrections demandées. Retire le label Status:Needs Work et ajoute Status:Reviewed sur la PR une fois corrigé.
 ```
 
 ```bash
@@ -235,7 +243,7 @@ Séquence :
    git push origin {branch}
 
 5. Ouvre la PR via le bot avec corps structuré (issue title + problem summary + changes + acceptance criteria) :
-   GH_TOKEN={nightshift_token} gh pr create --repo jordy-manner/recipe-manager \
+   PR_URL=$(GH_TOKEN={nightshift_token} gh pr create --repo jordy-manner/recipe-manager \
      --head {branch} --base v0.X \
      --title "{commit title}" \
      --body "## Issue
@@ -249,16 +257,21 @@ Closes #{numéro} — {issue title}
 ## Acceptance criteria
 {copy acceptance criteria checkboxes from issue}
 
-🌙 Night shift — man-work-nightshift-bot"
+🌙 Night shift — man-work-nightshift-bot")
+   PR_NUMBER=$(echo $PR_URL | grep -o '[0-9]*$')
+   # WIP sur la PR dès sa création (mode normal uniquement — en mode fix il est déjà posé)
+   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --add-label "Work in Progress"
 
 6. Ajoute les labels et poste le comment de fin :
-   GH_TOKEN={nightshift_token} gh issue edit {numéro} --repo jordy-manner/recipe-manager --add-label "hasPR"
    {si mode normal}
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method POST --field 'labels[]=Status:Needs Review'
+   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --remove-label "Work in Progress"
+   GH_TOKEN={nightshift_token} gh issue edit {numéro} --repo jordy-manner/recipe-manager --add-label "hasPR"
+   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --add-label "Status:Needs Review"
    {/si}
    {si mode fix}
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method DELETE --field 'labels[]=Status:Needs Work'
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method POST --field 'labels[]=Status:Renewed'
+   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --remove-label "Work in Progress"
+   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --remove-label "Status:Needs Work"
+   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --add-label "Status:Reviewed"
    {/si}
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
 

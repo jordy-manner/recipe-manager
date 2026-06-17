@@ -82,23 +82,46 @@ git show-ref --verify --quiet refs/remotes/origin/$BRANCH || {
 }
 ```
 
-#### 5b. Worktree
+#### 5b. Worktree — détecter par branche, pas par chemin
+
+Un worktree pour cette branche existe peut-être déjà (créé via `task-new`). Détecter par branche d'abord :
 
 ```bash
-WORKTREE="/home/jmanner/www/html/__lab/recipe-manager/{slug}"
-git worktree list | grep -q "$WORKTREE" || \
-  git worktree add "$WORKTREE" "$BRANCH"
+BRANCH="{type}/{numéro}-{slug}"
+DEFAULT_WORKTREE="/home/jmanner/www/html/__lab/recipe-manager/{slug}"
+
+# Cherche un worktree existant pour cette branche
+EXISTING=$(git worktree list --porcelain \
+  | awk '/^worktree /{wt=$2} /^branch refs\/heads\/'$BRANCH'$/{print wt}')
+
+if [ -n "$EXISTING" ]; then
+  WORKTREE="$EXISTING"
+  echo "Worktree existant réutilisé : $WORKTREE"
+else
+  git worktree add "$DEFAULT_WORKTREE" "$BRANCH"
+  WORKTREE="$DEFAULT_WORKTREE"
+fi
 ```
 
-#### 5c. Port auto-détecté
+#### 5c. Port auto-détecté — évite les conflits avec les .port existants
 
 ```bash
-for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009; do
-  ss -tlnp 2>/dev/null | grep -q ":${port}[^0-9]" || {
+# Ports déjà réservés dans tous les worktrees voisins
+USED_PORTS=$(find /home/jmanner/www/html/__lab/recipe-manager \
+  -maxdepth 2 -name ".port" -exec cat {} \; 2>/dev/null | sort -u)
+
+if [ -f "$WORKTREE/.port" ]; then
+  # Worktree réutilisé : conserver son port existant
+  PORT=$(cat "$WORKTREE/.port")
+else
+  for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009; do
+    echo "$USED_PORTS" | grep -q "^$port$" && continue
+    ss -tlnp 2>/dev/null | grep -q ":${port}[^0-9]" && continue
     echo $port > "$WORKTREE/.port"
+    PORT=$port
     break
-  }
-done
+  done
+fi
 ```
 
 ---

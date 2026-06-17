@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Newsreader, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { TopBar } from "./components/top-bar";
-import { Breadcrumb } from "./components/breadcrumb";
 import { MobileTabBar } from "./components/mobile-tab-bar";
 import { WidgetsDock } from "./components/widgets-dock";
 import { SiteFooter } from "./components/site-footer";
@@ -70,11 +68,6 @@ export default async function RootLayout({
         {/* Applies the saved theme/accent before paint (no light-theme flash). */}
         <ThemeScript />
         <TopBar notif={notif} />
-        {/* Suspense so the breadcrumb's headers()/DB lookup never blocks the page
-            stream; its fixed-height slot is already reserved by the body padding. */}
-        <Suspense fallback={null}>
-          <Breadcrumb />
-        </Suspense>
         <div className="flex-1">{children}</div>
         <SiteFooter />
         <MobileTabBar notifCount={notif.todoCount} />

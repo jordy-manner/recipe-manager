@@ -196,7 +196,8 @@ Séquence :
 4. Quand terminé, pousse la branche :
    git push origin {branch}
 
-5. Poste le comment de fin (sans ouvrir de PR) :
+5. Ajoute le label `hasPR` sur l'issue et poste le comment de fin :
+   GH_TOKEN={nightshift_token} gh issue edit {numéro} --repo jordy-manner/recipe-manager --add-label "hasPR"
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
 
 6. curl -s -H "Title: ✅ #{numéro} ready" -H "Tags: white_check_mark" -d "{titre} — ready for review" https://ntfy.sh/{topic}

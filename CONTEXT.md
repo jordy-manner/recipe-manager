@@ -364,6 +364,11 @@ token swap adds `.no-transition` on `<html>` for one frame (`app/globals.css`).
   `rm -rf .next` → `npm run dev`.
 
 ## Environment variables
+> **`.env` vs `.env.local` (intentional).** `.env` is **committed** and holds the
+> non-secret defaults / documented placeholders (e.g. `APP_RELEASE`, comments); local
+> overrides and secrets go in **`.env.local`** (git-ignored, takes precedence — standard
+> Next.js loading order). A committed `.env` is by design, not a leak.
+
 - `DATABASE_URL` — Neon Postgres, **pooled** endpoint (secret, `.env.local` / Vercel);
   used by the runtime app via the Neon adapter (`lib/prisma.ts`).
 - `DATABASE_URL_UNPOOLED` — Neon **direct/unpooled** endpoint. ⚠️ It MUST be the direct

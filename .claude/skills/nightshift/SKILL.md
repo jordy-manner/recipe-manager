@@ -155,9 +155,12 @@ curl -s \
 tmux new-session -d -s nightshift -x 220 -y 50
 ```
 
-Pour chaque issue, écrire le prompt dans un fichier temp puis lancer Claude :
+Pour chaque issue, écrire le prompt + un **wrapper script**, puis lancer le script via tmux.
+
+> **Pourquoi un wrapper ?** Passer le prompt inline via `$(cat ...)` dans `tmux send-keys` provoque l'exécution du texte numéroté comme commandes shell après la sortie de Claude. Le wrapper isole l'appel : rien ne s'exécute après `claude`.
 
 ```bash
+# 1. Prompt
 cat > /tmp/ns-{numéro}.txt << 'PROMPT'
 Tu travailles de façon AUTONOME sur l'issue GitHub #{numéro} : "{titre}".
 
@@ -186,14 +189,20 @@ Séquence :
 5. Poste le comment de fin :
    gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Terminé — PR ouverte."
 
-6. Envoie la notif ntfy :
-   curl -s -H "Title: ✅ #{numéro} terminé" -H "Tags: white_check_mark" -d "{titre}" https://ntfy.sh/{topic}
+6. curl -s -H "Title: ✅ #{numéro} terminé" -H "Tags: white_check_mark" -d "{titre}" https://ntfy.sh/{topic}
 PROMPT
 
+# 2. Wrapper script — isole l'appel Claude, rien ne s'exécute après sa sortie
+cat > /tmp/ns-run-{numéro}.sh << SCRIPT
+#!/bin/bash
+cd /home/jmanner/www/html/__lab/recipe-manager/{slug}
+exec claude --dangerously-skip-permissions -p "\$(cat /tmp/ns-{numéro}.txt)"
+SCRIPT
+chmod +x /tmp/ns-run-{numéro}.sh
+
+# 3. Lancer dans tmux via le wrapper
 tmux new-window -t nightshift -n "#{numéro}"
-tmux send-keys -t "nightshift:#{numéro}" \
-  "cd /home/jmanner/www/html/__lab/recipe-manager/{slug} && claude --dangerously-skip-permissions -p \"$(cat /tmp/ns-{numéro}.txt)\"" \
-  Enter
+tmux send-keys -t "nightshift:#{numéro}" "bash /tmp/ns-run-{numéro}.sh" Enter
 ```
 
 ---

@@ -32,11 +32,32 @@ gh issue list \
 
 ---
 
-### 2. Sélectionner les issues à traiter
+### 2. Filtrer et sélectionner les issues à traiter
+
+#### 2a. Règles de filtrage (avant de proposer la sélection)
+
+Pour chaque issue récupérée, appliquer ce filtre :
+
+| Condition | Action |
+|-----------|--------|
+| Pas de label `hasPR` | ✅ Éligible normalement |
+| Label `hasPR` + PR associée avec `Status:Needs Work` | ✅ Éligible en **mode fix** — lire les directives de la PR (comments + review requests) avant d'implémenter |
+| Label `hasPR` + PR associée sans `Status:Needs Work` | ❌ Exclure silencieusement |
+
+Pour détecter la PR associée et son label :
+
+```bash
+# Trouver la PR ouverte liée à l'issue (via "Closes #N" dans le body)
+gh pr list --repo jordy-manner/recipe-manager --state open --json number,labels,body \
+  | jq --arg n "{numéro}" '.[] | select(.body | contains("Closes #\($n)") or contains("closes #\($n)"))'
+```
+
+#### 2b. Afficher la sélection
 
 Poser via `AskUserQuestion` avec `multiSelect: true` :
 
-- Une option par issue, format : `#N — {titre}` avec description = premier paragraphe du body
+- Issues normales : `#N — {titre}`
+- Issues en mode fix : `#N — {titre} ⚠️ Needs Work` avec description = directive de la PR
 - **Ne pas ajouter d'option "Annuler"** — l'utilisateur utilise Échap pour annuler tout
 
 Si aucune issue cochée (ou Échap) → arrêter le skill proprement, message : `Night shift annulé.`
@@ -44,6 +65,7 @@ Si aucune issue cochée (ou Échap) → arrêter le skill proprement, message : 
 Pour chaque issue sélectionnée :
 - `type` : depuis les labels (`bug` → `fix`, `chore` → `chore`, sinon `feat`)
 - `slug` : kebab-case 2–4 mots depuis le titre
+- `mode` : `normal` ou `fix` (si PR a `Status:Needs Work`)
 
 ---
 
@@ -165,6 +187,15 @@ Pour chaque issue, écrire le prompt + un **wrapper script**, puis lancer le scr
 
 > **Pourquoi un wrapper ?** Passer le prompt inline via `$(cat ...)` dans `tmux send-keys` provoque l'exécution du texte numéroté comme commandes shell après la sortie de Claude. Le wrapper isole l'appel : rien ne s'exécute après `claude`.
 
+Si `mode == fix` (PR existante avec `Status:Needs Work`) : le prompt inclut en plus les directives de la PR :
+
+```
+MODE FIX — Cette issue a une PR existante avec des change requests.
+Lis d'abord tous les comments de la PR #{pr_number} pour comprendre ce qui doit être corrigé :
+  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/recipe-manager --comments
+Applique uniquement les corrections demandées. Retire le label Status:Needs Work et ajoute Status:Renewed sur la PR une fois corrigé.
+```
+
 ```bash
 # 1. Prompt
 cat > /tmp/ns-{numéro}.txt << 'PROMPT'
@@ -172,6 +203,12 @@ Tu travailles de façon AUTONOME sur l'issue GitHub #{numéro} : "{titre}".
 
 Contexte :
 {body}
+
+{si mode fix}
+MODE FIX — PR #{pr_number} a des change requests. Lis ses comments avant tout :
+  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/recipe-manager --comments
+Applique uniquement les corrections demandées.
+{/si mode fix}
 
 Règles :
 - Lis CLAUDE.md + AGENTS.md + DESIGN.md avant tout code.
@@ -186,7 +223,7 @@ Séquence :
 1. Poste un comment de démarrage :
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "⚙️ Implementation in progress..."
 
-2. Implémente l'issue dans ce worktree.
+2. Implémente l'issue (ou applique les corrections si mode fix).
 
 3. Si bloqué :
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "🚧 Blocked: {reason}"
@@ -216,7 +253,13 @@ Closes #{numéro} — {issue title}
 
 6. Ajoute les labels et poste le comment de fin :
    GH_TOKEN={nightshift_token} gh issue edit {numéro} --repo jordy-manner/recipe-manager --add-label "hasPR"
+   {si mode normal}
    GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method POST --field 'labels[]=Status:Needs Review'
+   {/si}
+   {si mode fix}
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method DELETE --field 'labels[]=Status:Needs Work'
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method POST --field 'labels[]=Status:Renewed'
+   {/si}
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
 
 6. curl -s -H "Title: ✅ #{numéro} ready" -H "Tags: white_check_mark" -d "{titre} — ready for review" https://ntfy.sh/{topic}

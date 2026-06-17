@@ -178,7 +178,7 @@ export async function createRecipeAction(
     await createIngredients(tx, r.id, input, ingSectionIds);
     await createSteps(tx, r.id, input, stepSectionIds);
     return r;
-  });
+  }, { timeout: 15000 });
 
   revalidatePath("/recettes");
   redirect(`/recettes/${recipe.slug}`);
@@ -233,7 +233,7 @@ export async function updateRecipeAction(
     const { ingSectionIds, stepSectionIds } = await createSections(tx, id, input);
     await createIngredients(tx, id, input, ingSectionIds);
     await createSteps(tx, id, input, stepSectionIds);
-  });
+  }, { timeout: 15000 });
 
   revalidatePath("/recettes");
   revalidatePath(`/recettes/${existing.slug}`);

@@ -15,28 +15,24 @@ Le répertoire `main/` reste **toujours sur la branche de version** (`v0.X`). Le
 
 ## Étapes
 
-### 1. Collecter les métadonnées de base
+### 1. Collecter le type
 
-Poser via `AskUserQuestion` (en une seule fois) :
+Poser via `AskUserQuestion` :
 
 - **Type** : `feat` / `fix` / `chore`
 
-Puis demander en texte libre :
-
-- **Titre de la tâche** (court, français ou anglais — sera traduit si besoin)
-- **Slug** kebab-case pour la branche et le dossier worktree (ex. `portion-stepper`, `auth-fix`)
-
-**Règle titre** : les issues GitHub sont en **anglais**. Afficher la traduction retenue si le titre est en français.
-
 ---
 
-### 2. Construire le contexte de l'issue par Q&A
+### 2. Décrire la tâche et collecter le contexte par Q&A
+
+Demander en texte libre :
+> "Décris la tâche."
 
 Objectif : rédiger un corps d'issue précis, actionnable, sans sur-spécifier. Le contexte s'écrit de manière **itérative** — Claude pose des questions, l'utilisateur répond, jusqu'à ce que le contexte soit suffisant.
 
 #### 2a. Lire le code pertinent
 
-Avant de poser des questions, lire rapidement les fichiers concernés par la tâche (grep / Read) pour ne pas poser des questions dont la réponse est déjà dans le code.
+Avant de poser des questions, lire rapidement les fichiers concernés (grep / Read) pour ne pas poser des questions dont la réponse est déjà dans le code.
 
 #### 2b. Questions à poser (une ou deux à la fois, en texte libre)
 
@@ -53,10 +49,30 @@ Puis, selon la tâche :
 
 Continuer les questions jusqu'à pouvoir rédiger les sections **Problem**, **Affected areas**, **Acceptance criteria** sans ambiguïté. En général 2 à 4 tours suffisent.
 
-#### 2c. Soumettre le brouillon pour validation
+#### 2c. Déduire automatiquement titre et slug
 
-Afficher le corps d'issue rédigé en markdown et demander :
-> "Ce contexte est-il correct ? Des ajouts / corrections ?"
+À partir de la description et des réponses collectées, déduire **sans demander** :
+
+- **Titre** : court, en anglais, actionnable (ex. `Add portion stepper to recipe form`)
+- **Slug** : kebab-case, 2-4 mots, dérivé du titre (ex. `portion-stepper`)
+
+**Règle langue** : issues GitHub, commits, corps de PR et comments GitHub sont toujours en **anglais**. Traduire si la description est en français.
+
+#### 2d. Soumettre le récap complet pour validation
+
+Afficher en une seule fois :
+
+```
+Type    : {feat|fix|chore}
+Titre   : {titre en anglais}
+Slug    : {slug}
+
+--- Corps de l'issue ---
+{corps markdown : Problem / Affected areas / Acceptance criteria}
+```
+
+Demander :
+> "Ce récap est-il correct ? Des ajouts / corrections ?"
 
 Itérer si besoin. Ne pas créer l'issue avant validation explicite.
 

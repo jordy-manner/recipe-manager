@@ -173,6 +173,7 @@ Règles :
 - Après changement UI : npm run check:design.
 - NE PAS ajouter Co-Authored-By dans les messages de commit.
 - NE PAS ouvrir de PR — la validation et la PR sont faites manuellement par jordy-manner.
+- Tous les GitHub comments, messages de commit et corps de PR sont rédigés en **anglais**.
 
 Séquence :
 

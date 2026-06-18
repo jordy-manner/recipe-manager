@@ -2,6 +2,11 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.11] — 2026-06-18
+
+- **nightshift skill**: full workflow revision — overhauled issue processing loop, improved error handling and status transitions.
+- **gh new skill**: renamed from `task-new`; command is now `/gh new`.
+
 ## [v0.3.10] — 2026-06-17
 
 - **nightshift skill**: new `/nightshift` command — autonomously processes selected GitHub issues overnight, each in its own tmux window running a Claude agent. Monitoring via GitHub issue comments (priority), ntfy.sh push notifications, and optional ttyd web terminal.

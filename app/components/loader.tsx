@@ -1,35 +1,26 @@
-import { Icon } from "./icons";
+import { Egg, Logo } from "./Logo";
 
-// Page-transition loader: a large logo "bubble" with a pulsing halo + a small
-// "ça mijote…" caption. Server-safe (no hooks) — rendered by route loading.tsx
-// files as the Suspense fallback during navigation.
+// Page-transition loader: full-screen dark overlay with egg bubble + sonar halos.
+// Server-safe — rendered as Suspense fallback during navigation.
 export function Loader() {
   return (
     <div
       role="status"
       aria-label="Chargement"
-      className="flex min-h-[65vh] animate-fade-in flex-col items-center justify-center gap-6 px-6"
+      className="fixed inset-0 z-[100] flex animate-fade-in flex-col items-center justify-center gap-6 bg-bg px-6"
     >
       <div className="relative grid place-items-center">
-        {/* Pulsing halos behind the bubble (sonar effect). */}
-        <span
-          aria-hidden="true"
-          className="animate-halo absolute h-28 w-28 rounded-full bg-accent-soft"
-        />
-        <span
-          aria-hidden="true"
-          className="animate-halo absolute h-28 w-28 rounded-full bg-accent/20 [animation-delay:0.85s]"
-        />
-        {/* The logo bubble. */}
-        <span className="animate-breathe relative grid h-28 w-28 place-items-center rounded-full bg-accent text-white shadow-card-lg">
-          <Icon name="chef" size={56} strokeWidth={1.6} />
+        {/* Sonar halos behind the bubble. */}
+        <span aria-hidden="true" className="animate-halo absolute h-28 w-28 rounded-full bg-accent-soft" />
+        <span aria-hidden="true" className="animate-halo absolute h-28 w-28 rounded-full bg-accent/20 [animation-delay:0.85s]" />
+        {/* Dark bubble with egg (not terracotta, not the M-bars). */}
+        <span className="animate-breathe relative grid h-28 w-28 place-items-center rounded-full bg-ink shadow-card-lg">
+          <Egg className="h-[60px] w-[60px]" />
         </span>
       </div>
 
       <div className="flex flex-col items-center gap-2.5">
-        <span className="font-display text-[26px] font-semibold tracking-[-0.01em]">
-          Marmite<span className="text-accent">.</span>
-        </span>
+        <Logo size={26} color="var(--color-ink)" />
         <span className="flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.16em] text-ink-faint">
           Ça mijote
           <span className="flex items-end gap-1">

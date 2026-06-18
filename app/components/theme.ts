@@ -8,8 +8,8 @@
 // instantly and suppress transitions for one frame via the `no-transition`
 // class (see globals.css) so nothing animates the var() change.
 
-export const THEME_STORAGE = "marmite-theme";
-export const ACCENT_STORAGE = "marmite-accent";
+export const THEME_STORAGE = "mealoday-theme";
+export const ACCENT_STORAGE = "mealoday-accent";
 
 export type ThemeMode = "light" | "dark";
 

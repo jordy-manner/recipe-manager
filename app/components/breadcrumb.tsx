@@ -63,7 +63,7 @@ export function Breadcrumb() {
   return (
     <nav
       aria-label="Fil d'Ariane"
-      className="fixed inset-x-0 top-[68px] z-30 hidden h-10 border-b border-line-soft bg-bg sm:block"
+      className="fixed inset-x-0 top-[64px] z-30 hidden h-10 border-b border-line-soft bg-surface sm:block"
     >
       <ol className="mx-auto flex h-full w-full max-w-content items-center gap-1.5 px-8 text-[13px]">
         {crumbs.map((c, i) => {

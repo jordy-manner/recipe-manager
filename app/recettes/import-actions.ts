@@ -26,7 +26,7 @@ async function directFetch(url: string): Promise<Response | null> {
   try {
     return await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MarmiteBot/1.0; +recipe-import)",
+        "User-Agent": "Mozilla/5.0 (compatible; MealodayBot/1.0; +recipe-import)",
         Accept: "text/html",
       },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

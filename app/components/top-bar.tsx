@@ -5,24 +5,9 @@ import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./icons";
 import { DesktopMoreMenu } from "./nav-more-menu";
 import { NotifBell } from "./notif-bell";
+import { Logo } from "./Logo";
 import type { Notifications } from "@/lib/notifications";
 
-/** Marmite. wordmark with the accent dot. */
-export function Brand({ size = 21 }: { size?: number }) {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-accent text-white shadow-card">
-        <Icon name="chef" size={20} />
-      </span>
-      <span className="font-display text-[21px] font-semibold" style={{ fontSize: size }}>
-        Marmite<span className="text-accent">.</span>
-      </span>
-    </span>
-  );
-}
-
-// Primary desktop nav. Accueil is reached via the logo; the secondary
-// destinations live in the "Plus" dropdown (DesktopMoreMenu / nav-data).
 const NAV: { label: string; href: string; icon: IconName }[] = [
   { label: "Recettes", href: "/recettes", icon: "book" },
   { label: "Saisons", href: "/saisons", icon: "leaf" },
@@ -34,14 +19,14 @@ export function TopBar({ notif }: { notif: Notifications }) {
   const pathname = usePathname();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-line-soft bg-bg/[0.88] backdrop-blur-[12px]">
-      <div className="mx-auto flex h-[68px] w-full max-w-content items-center gap-4 px-[18px] sm:gap-7 sm:px-8">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-line-soft bg-ink/90 backdrop-blur-[12px]">
+      <div className="mx-auto flex h-[64px] w-full max-w-content items-center gap-[22px] px-[18px] sm:px-8">
         <Link href="/" className="shrink-0">
-          <Brand />
+          <Logo color="white" size={21} />
         </Link>
 
-        {/* Desktop nav: icon links + the "Plus" dropdown (secondary routes). */}
-        <nav className="hidden items-center gap-1 sm:flex">
+        {/* Desktop nav — dark top bar: inactive white/75, active accent fill, hover white/12. */}
+        <nav className="hidden items-center gap-0.5 sm:flex">
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -51,8 +36,8 @@ export function TopBar({ notif }: { notif: Notifications }) {
                 aria-current={active ? "page" : undefined}
                 className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14.5px] font-semibold transition ${
                   active
-                    ? "bg-accent-soft text-accent-ink"
-                    : "text-ink-soft hover:text-ink"
+                    ? "bg-accent text-white"
+                    : "text-white/75 hover:bg-white/[0.12] hover:text-white"
                 }`}
               >
                 <Icon name={item.icon} size={17} />
@@ -60,13 +45,10 @@ export function TopBar({ notif }: { notif: Notifications }) {
               </Link>
             );
           })}
-          <DesktopMoreMenu />
+          <DesktopMoreMenu dark />
         </nav>
 
         <div className="flex-1" />
-
-        {/* Mobile: logo only (full navigation lives in the bottom tab bar; search
-            is reached via the Recettes tab, notifications via the "Plus" badge). */}
 
         {/* Desktop CTA. */}
         <Link
@@ -76,9 +58,9 @@ export function TopBar({ notif }: { notif: Notifications }) {
           <Icon name="plus" size={17} /> Créer une recette
         </Link>
 
-        {/* Desktop notification bell — far right, after the CTA. */}
+        {/* Desktop notification bell — dark top bar variant. */}
         <div className="hidden shrink-0 sm:block">
-          <NotifBell items={notif.items} todoCount={notif.todoCount} placement="desktop" />
+          <NotifBell items={notif.items} todoCount={notif.todoCount} placement="desktop" dark />
         </div>
       </div>
     </header>

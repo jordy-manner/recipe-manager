@@ -1,8 +1,8 @@
-# DESIGN.md — Marmite
+# DESIGN.md — Mealoday
 
-> Source of truth for the **Marmite** design system (home-cooking recipe app).
+> Source of truth for the **Mealoday** design system (home-cooking recipe app).
 > Single portable file, readable by humans **and** AI agents. Frozen variant:
-> **“Gourmand Arrondi · Terracotta”**.
+> **”Gourmand Arrondi · Terracotta”**.
 >
 > **Implementation:** the values below are mirrored 1:1 by the Tailwind v4
 > `@theme` in `app/globals.css` (light tokens) and `app/components/theme.ts`
@@ -21,9 +21,14 @@
 
 ## 1. Identité
 
-Marmite is a mainstream **home-cooking** app. The world is **warm, editorial and
-appetising**: terracotta on cream, large serif titles, a round and welcoming UI.
-We aim for appetite and simplicity, never flashiness.
+**Mealoday** is a mainstream **home-cooking** app (ex-"Marmite"). Tagline:
+*Orchestrer vos menus*. The world is **warm, editorial and appetising**:
+terracotta on cream, large serif titles, a round and welcoming UI.
+
+**Logotype** — wordmark "Meal(o)day" in Outfit 600 where the "o" is a styled
+egg (white disc, terracotta yolk offset top-left, white glint). `<Logo>` in
+`app/components/Logo.tsx`. App icon: terracotta rounded tile, 7 equalizer bars
+forming an "M" (`<AppIcon>`).
 
 **Keywords**: warm · editorial · appetising · round · legible · responsible
 (seasonality, carbon).

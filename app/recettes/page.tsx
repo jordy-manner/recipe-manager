@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { isSearchActive, searchRecipeIds, type SearchParams } from "@/lib/search";
-import type { RecipeCardData } from "../components/recipe-card";
+import type { RecipeCardData, RecipeView } from "../components/recipe-card";
+import { Icon } from "../components/icons";
 import {
   cardInclude,
   EmptyState,
-  MagazineGrid,
+  RECIPE_VIEWS,
+  RecipesLayout,
   SectionHead,
   toCard,
   type CardRow,
@@ -18,6 +20,29 @@ export const metadata = { title: "Catalogue" };
 export const dynamic = "force-dynamic";
 
 const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+
+function ViewSwitcher({ current, extraParams = "" }: { current: RecipeView; extraParams?: string }) {
+  return (
+    <div className="flex shrink-0 gap-1" role="group" aria-label="Affichage">
+      {RECIPE_VIEWS.map((v) => {
+        const base = v.key === "magazine" ? `/recettes${extraParams ? `?${extraParams}` : ""}` : `/recettes?view=${v.key}${extraParams ? `&${extraParams}` : ""}`;
+        return (
+          <Link
+            key={v.key}
+            href={base}
+            aria-label={v.label}
+            title={v.label}
+            className={`grid h-9 w-9 place-items-center rounded-input transition ${
+              current === v.key ? "bg-ink text-bg" : "text-ink-faint hover:bg-surface-muted hover:text-ink"
+            }`}
+          >
+            <Icon name={v.icon} size={18} />
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export default async function CataloguePage({
   searchParams,
@@ -32,6 +57,8 @@ export default async function CataloguePage({
     maxTime: Number(str(sp.t)) || 0,
     difficulty: Number(str(sp.d)) || 0,
   };
+  const viewRaw = str(sp.view) as RecipeView;
+  const view: RecipeView = RECIPE_VIEWS.some((v) => v.key === viewRaw) ? viewRaw : "magazine";
   const active = isSearchActive(params);
 
   const categories = await prisma.category.findMany({
@@ -63,16 +90,19 @@ export default async function CataloguePage({
         <SectionHead
           title={`${results.length} recette${results.length > 1 ? "s" : ""}`}
           action={
-            <Link
-              href="/recettes"
-              className="inline-flex items-center gap-1 text-[14px] font-bold text-accent-ink transition hover:text-accent"
-            >
-              Réinitialiser
-            </Link>
+            <div className="flex items-center gap-3">
+              <ViewSwitcher current={view} />
+              <Link
+                href="/recettes"
+                className="inline-flex items-center gap-1 text-[14px] font-bold text-accent-ink transition hover:text-accent"
+              >
+                Réinitialiser
+              </Link>
+            </div>
           }
         />
         {results.length > 0 ? (
-          <MagazineGrid recipes={results} matches={matches} />
+          <RecipesLayout view={view} recipes={results} matches={matches} />
         ) : (
           <p className="rounded-card border border-dashed border-line px-4 py-12 text-center text-ink-soft">
             Aucune recette ne correspond à votre recherche.
@@ -87,12 +117,21 @@ export default async function CataloguePage({
     })) as unknown as CardRow[];
 
     resultsView =
-      rows.length === 0 ? <EmptyState /> : <MagazineGrid recipes={rows.map(toCard)} />;
+      rows.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <section>
+          <SectionHead
+            title={`${rows.length} recette${rows.length > 1 ? "s" : ""}`}
+            action={<ViewSwitcher current={view} />}
+          />
+          <RecipesLayout view={view} recipes={rows.map(toCard)} />
+        </section>
+      );
   }
 
   return (
     <main className="mx-auto w-full max-w-content animate-fade-up px-[18px] sm:px-8">
-      {/* Compact catalogue header */}
       <section className="pb-6 pt-12">
         <p className="eyebrow">Catalogue</p>
         <h1 className="mb-7 mt-3 font-display text-[clamp(30px,4vw,44px)] font-medium tracking-[-0.02em]">

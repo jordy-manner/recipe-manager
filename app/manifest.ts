@@ -4,10 +4,10 @@ import type { MetadataRoute } from "next";
 // theme colors. Next serves this at /manifest.webmanifest and links it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Marmite. — Recettes maison",
-    short_name: "Marmite.",
+    name: "Mealoday — Recettes maison",
+    short_name: "Mealoday",
     description:
-      "Cuisine maison pour tous : recherchez, consultez et créez vos recettes.",
+      "Orchestrez vos menus : recherchez, consultez et créez vos recettes.",
     start_url: "/recettes",
     display: "standalone",
     background_color: "#fff3e9",

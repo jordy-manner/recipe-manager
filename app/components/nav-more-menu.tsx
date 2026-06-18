@@ -9,7 +9,7 @@ import { SHEET_GROUPS, SHEET_ROUTES } from "./nav-data";
 // Desktop-only "Plus" dropdown (≥ sm): a popover reusing the mobile sheet groups.
 // Toggle on click, close on click-outside / Escape / navigation. Keyboard:
 // ↑/↓ move between items, Escape closes and refocuses the trigger.
-export function DesktopMoreMenu() {
+export function DesktopMoreMenu({ dark = false }: { dark?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,13 @@ export function DesktopMoreMenu() {
         aria-expanded={open}
         aria-controls={menuId}
         className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[14.5px] font-semibold transition ${
-          active || open ? "text-accent" : "text-ink-soft hover:text-ink"
+          dark
+            ? active || open
+              ? "bg-accent text-white"
+              : "text-white/75 hover:bg-white/[0.12] hover:text-white"
+            : active || open
+              ? "bg-accent-soft text-accent-ink"
+              : "text-ink-soft hover:text-ink"
         }`}
       >
         <Icon name="dots" size={18} />

@@ -20,6 +20,8 @@ export type RecipeCardData = {
   categories: string[];
 };
 
+export type RecipeView = "grille" | "liste" | "magazine";
+
 const DIFF_LABELS: Record<number, string> = { 1: "Facile", 2: "Moyen", 3: "Difficile" };
 
 function MetaRow({ r }: { r: RecipeCardData }) {
@@ -127,6 +129,64 @@ export function RecipeCard({
             Voir la recette <Icon name="arrow" size={16} />
           </span>
         )}
+      </div>
+    </Link>
+  );
+}
+
+/** Horizontal row card for list view. */
+export function RecipeCardRow({
+  r,
+  match,
+}: {
+  r: RecipeCardData;
+  match?: { count: number; total: number };
+}) {
+  const category = r.categories[0];
+  return (
+    <Link
+      href={`/recettes/${r.slug}`}
+      className="group flex gap-0 overflow-hidden rounded-card border border-line-soft bg-surface shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-line hover:shadow-card-lg"
+    >
+      <div className="relative w-[190px] shrink-0 self-stretch">
+        <RecipePhoto imageUrl={r.imageUrl} title={r.title} label={category ?? "recette"} />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {category && (
+            <span className="rounded-full bg-accent-soft px-2.5 py-0.5 font-mono text-[11px] font-semibold text-accent-ink">
+              {category}
+            </span>
+          )}
+          {r.tags.slice(0, 2).map((t) => (
+            <Tag key={t}>{t}</Tag>
+          ))}
+          {match && (
+            <span className="rounded-full bg-veg-soft px-2.5 py-0.5 font-mono text-[11.5px] font-bold text-veg">
+              {match.count}/{match.total} ingrédients
+            </span>
+          )}
+        </div>
+        <h3 className="font-display text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+          {r.title}
+        </h3>
+        {r.description && (
+          <p className="line-clamp-2 text-[13.5px] leading-relaxed text-ink-soft">
+            {r.description}
+          </p>
+        )}
+        <MetaRow r={r} />
+      </div>
+      <div className="flex shrink-0 flex-col items-end justify-between px-4 py-4">
+        {r.rating != null && (
+          <span className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold text-ink-soft">
+            <Icon name="star" size={13} className="text-accent" fill="currentColor" />
+            {r.rating.toFixed(1)}
+          </span>
+        )}
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition group-hover:bg-accent group-hover:text-white">
+          <Icon name="arrow" size={18} />
+        </span>
       </div>
     </Link>
   );

@@ -66,7 +66,7 @@ export function SettingsRail({
       </nav>
       {release && (
         <div className="mt-6 px-3 font-mono text-[11px] text-ink-faint">
-          Marmite · {release}
+          Mealoday · {release}
         </div>
       )}
     </aside>

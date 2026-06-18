@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icon } from "../components/icons";
-import { RecipeCard, type RecipeCardData } from "../components/recipe-card";
+import { RecipeCard, RecipeCardRow, type RecipeCardData, type RecipeView } from "../components/recipe-card";
 
 // Shared recipe-list helpers used by both the home (/) and the catalogue
 // (/recettes). Server-compatible: presentational pieces render the RecipeCard
@@ -47,7 +47,50 @@ export function toCard(r: CardRow): RecipeCardData {
   };
 }
 
-/** Magazine layout: first card is a full-width feature, rest in a 2-col grid. */
+export const RECIPE_VIEWS: { key: RecipeView; icon: "grid" | "rows" | "layers"; label: string }[] = [
+  { key: "grille", icon: "grid", label: "Grille" },
+  { key: "liste", icon: "rows", label: "Liste" },
+  { key: "magazine", icon: "layers", label: "Magazine" },
+];
+
+/** Auto-fill card grid. */
+export function RecipeGrid({
+  recipes,
+  matches,
+}: {
+  recipes: RecipeCardData[];
+  matches?: Map<string, { count: number; total: number }>;
+}) {
+  return (
+    <div
+      className="grid gap-[26px]"
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))" }}
+    >
+      {recipes.map((r) => (
+        <RecipeCard key={r.id} r={r} match={matches?.get(r.id)} />
+      ))}
+    </div>
+  );
+}
+
+/** Horizontal row list. */
+export function RecipeList({
+  recipes,
+  matches,
+}: {
+  recipes: RecipeCardData[];
+  matches?: Map<string, { count: number; total: number }>;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {recipes.map((r) => (
+        <RecipeCardRow key={r.id} r={r} match={matches?.get(r.id)} />
+      ))}
+    </div>
+  );
+}
+
+/** Magazine: first card spans full width, rest in a 2-col grid. */
 export function MagazineGrid({
   recipes,
   matches,
@@ -62,6 +105,20 @@ export function MagazineGrid({
       ))}
     </div>
   );
+}
+
+export function RecipesLayout({
+  view,
+  recipes,
+  matches,
+}: {
+  view: RecipeView;
+  recipes: RecipeCardData[];
+  matches?: Map<string, { count: number; total: number }>;
+}) {
+  if (view === "liste") return <RecipeList recipes={recipes} matches={matches} />;
+  if (view === "grille") return <RecipeGrid recipes={recipes} matches={matches} />;
+  return <MagazineGrid recipes={recipes} matches={matches} />;
 }
 
 export function SectionHead({

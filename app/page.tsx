@@ -11,7 +11,7 @@ import {
 } from "./recettes/_shared";
 import { SearchControls } from "./recettes/search-controls";
 
-export const metadata = { title: "Marmite. — Recettes maison" };
+export const metadata = { title: "Mealoday — Recettes maison" };
 
 // DB-dependent data → rendered on demand (no static prerender at build time).
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 ---
 name: nightshift
-description: Mode nuit — traite les issues GitHub sélectionnées en parallèle dans des tmux windows, chacune avec un Claude autonome. Monitoring via GitHub comments (prioritaire) + ntfy.sh + ttyd optionnel. Lancer avec « /nightshift », « night shift », « traite les issues cette nuit ».
+description: Mode nuit — traite les issues GitHub sélectionnées en parallèle dans des tmux windows, chacune avec un Claude autonome. Monitoring via GitHub comments. Lancer avec « /nightshift », « night shift », « traite les issues cette nuit ».
 ---
 
 # nightshift — implémentation autonome des issues
@@ -12,8 +12,6 @@ Une commande → issues sélectionnées traitées en parallèle pendant la nuit.
 ```bash
 command -v tmux      || echo "MANQUANT: tmux (sudo apt install tmux)"
 command -v claude    || echo "MANQUANT: claude CLI"
-command -v ttyd      || echo "OPTIONNEL: ttyd (monitoring web mobile)"
-command -v qrencode  || echo "OPTIONNEL: qrencode (sudo apt install qrencode)"
 ```
 
 ---
@@ -56,36 +54,40 @@ gh pr list --repo jordy-manner/recipe-manager --state open --json number,labels,
 
 Poser via `AskUserQuestion` avec `multiSelect: true` :
 
-- Issues normales : `#N — {titre}`
-- Issues en mode fix : `#N — {titre} ⚠️ Needs Work` avec description = directive de la PR
+- **Label** : `[{type}] #{N} — {titre}`
+  - `type` depuis les labels de l'issue : `Type:Fix` → `fix`, `Type:Chore` → `chore`, sinon `feat`
+  - Mode fix : ajouter ` ⚠️ Needs Work` à la fin du label
+- **Description** : premiers 120 caractères du body de l'issue (tronquer proprement au dernier mot)
+  - Mode fix : remplacer par la directive principale de la PR (premier change request)
 - **Ne pas ajouter d'option "Annuler"** — l'utilisateur utilise Échap pour annuler tout
 
 Si aucune issue cochée (ou Échap) → arrêter le skill proprement, message : `Night shift annulé.`
 
 Pour chaque issue sélectionnée :
-- `type` : depuis les labels (`bug` → `fix`, `chore` → `chore`, sinon `feat`)
+- `type` : depuis les labels (`Type:Fix` → `fix`, `Type:Chore` → `chore`, sinon `feat`)
 - `slug` : kebab-case 2–4 mots depuis le titre
 - `mode` : `normal` ou `fix` (si PR a `Status:Needs Work`)
 
 ---
 
-### 3. Configurer le topic ntfy
-
-Demander en texte libre :
-> "Topic ntfy pour les notifications mobile (défaut : `recipe-nightshift`) :"
-
-URL monitoring : `https://ntfy.sh/{topic}`
-App mobile : ntfy (Android/iOS, gratuit, aucun compte requis)
-
----
-
-### 4. Vérifier l'absence d'une session nightshift existante
+### 3. Vérifier l'absence d'une session nightshift existante
 
 ```bash
 tmux has-session -t nightshift 2>/dev/null && echo "SESSION_EXISTS"
 ```
 
 Si session existe → demander confirmation avant de continuer.
+
+---
+
+### 4. Résoudre la branche de base
+
+```bash
+BASE_BRANCH=$(git -C /home/jmanner/www/html/__lab/recipe-manager/main branch --show-current)
+# → ex. "v0.3"
+```
+
+Cette variable est utilisée dans toutes les étapes suivantes à la place de `v0.X`.
 
 ---
 
@@ -100,7 +102,7 @@ BRANCH="{type}/{numéro}-{slug}"
 git show-ref --verify --quiet refs/remotes/origin/$BRANCH || {
   git checkout -b $BRANCH
   git push -u origin $BRANCH
-  git checkout v0.X
+  git checkout $BASE_BRANCH
 }
 ```
 
@@ -136,7 +138,7 @@ if [ -f "$WORKTREE/.port" ]; then
   # Worktree réutilisé : conserver son port existant
   PORT=$(cat "$WORKTREE/.port")
 else
-  for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009; do
+  for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014 3015 3016 3017 3018 3019; do
     echo "$USED_PORTS" | grep -q "^$port$" && continue
     ss -tlnp 2>/dev/null | grep -q ":${port}[^0-9]" && continue
     echo $port > "$WORKTREE/.port"
@@ -148,7 +150,7 @@ fi
 
 ---
 
-### 6. GitHub comments + ntfy de démarrage
+### 6. GitHub comments de démarrage
 
 Générer le token bot **une fois** avant la boucle :
 
@@ -159,28 +161,12 @@ NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/recipe-manager)
 Pour chaque issue sélectionnée :
 
 ```bash
-GH_TOKEN=$NIGHTSHIFT_TOKEN gh issue comment {numéro} \
-  --repo jordy-manner/recipe-manager \
-  --body "🌙 **Night shift started** — Claude is autonomously implementing this issue.
-Worktree: \`{slug}/\` · Dev port: \`{port}\`"
-
 # mode fix uniquement : PR existe déjà → WIP sur la PR
-# mode normal : WIP posé sur la PR après sa création (voir step 5 du prompt)
 if [ "{mode}" = "fix" ]; then
-  GH_TOKEN=$NIGHTSHIFT_TOKEN gh issue edit {pr_number} \
-    --repo jordy-manner/recipe-manager \
-    --add-label "Work in Progress"
+  GH_TOKEN=$NIGHTSHIFT_TOKEN gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+    --method POST \
+    --field 'labels[]=Work in Progress'
 fi
-```
-
-Notification ntfy globale :
-
-```bash
-curl -s \
-  -H "Title: 🌙 Night shift démarré" \
-  -H "Tags: moon,rocket" \
-  -d "{N} issues : {liste des titres}" \
-  https://ntfy.sh/{topic}
 ```
 
 ---
@@ -228,23 +214,19 @@ Règles :
 
 Séquence :
 
-1. Poste un comment de démarrage :
-   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "⚙️ Implementation in progress..."
+1. Implémente l'issue (ou applique les corrections si mode fix).
 
-2. Implémente l'issue (ou applique les corrections si mode fix).
-
-3. Si bloqué :
+2. Si bloqué :
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "🚧 Blocked: {reason}"
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels --method POST --field 'labels[]=Status:Needs Work'
-   curl -s -H "Title: 🚧 Blocked #{numéro}" -H "Tags: warning" -H "Priority: high" -d "{reason}" https://ntfy.sh/{topic}
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{numéro}/labels --method POST --field 'labels[]=Status:Needs Work'
    Arrête-toi et attends.
 
-4. Quand terminé, pousse la branche :
+3. Quand terminé, pousse la branche :
    git push origin {branch}
 
-5. Ouvre la PR via le bot avec corps structuré (issue title + problem summary + changes + acceptance criteria) :
+4. Ouvre la PR via le bot avec corps structuré (issue title + problem summary + changes + acceptance criteria) :
    PR_URL=$(GH_TOKEN={nightshift_token} gh pr create --repo jordy-manner/recipe-manager \
-     --head {branch} --base v0.X \
+     --head {branch} --base {base_branch} \
      --title "{commit title}" \
      --body "## Issue
 Closes #{numéro} — {issue title}
@@ -260,31 +242,37 @@ Closes #{numéro} — {issue title}
 🌙 Night shift — man-work-nightshift-bot")
    PR_NUMBER=$(echo $PR_URL | grep -o '[0-9]*$')
    # WIP sur la PR dès sa création (mode normal uniquement — en mode fix il est déjà posé)
-   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --add-label "Work in Progress"
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+     --method POST --field 'labels[]=Work in Progress'
 
-6. Ajoute les labels et poste le comment de fin :
+5. Ajoute les labels et poste le comment de fin :
    {si mode normal}
-   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --remove-label "Work in Progress"
-   GH_TOKEN={nightshift_token} gh issue edit {numéro} --repo jordy-manner/recipe-manager --add-label "hasPR"
-   GH_TOKEN={nightshift_token} gh issue edit $PR_NUMBER --repo jordy-manner/recipe-manager --add-label "Status:Needs Review"
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+     --method DELETE --field 'labels[]=Work in Progress'
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{numéro}/labels \
+     --method POST --field 'labels[]=hasPR'
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+     --method POST --field 'labels[]=Status:Needs Review'
    {/si}
    {si mode fix}
-   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --remove-label "Work in Progress"
-   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --remove-label "Status:Needs Work"
-   GH_TOKEN={nightshift_token} gh issue edit {pr_number} --repo jordy-manner/recipe-manager --add-label "Status:Reviewed"
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+     --method DELETE --field 'labels[]=Work in Progress'
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+     --method DELETE --field 'labels[]=Status:Needs Work'
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+     --method POST --field 'labels[]=Status:Reviewed'
    {/si}
    GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
-
-6. curl -s -H "Title: ✅ #{numéro} ready" -H "Tags: white_check_mark" -d "{titre} — ready for review" https://ntfy.sh/{topic}
 PROMPT
 
 # 2. Wrapper script — isole l'appel Claude, rien ne s'exécute après sa sortie
-# Le token bot est injecté comme variable d'environnement pour les gh commands autonomes
+# Token bot + branche de base injectés comme valeurs littérales (résolus à la génération)
 cat > /tmp/ns-run-{numéro}.sh << SCRIPT
 #!/bin/bash
-export NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/recipe-manager)
 cd /home/jmanner/www/html/__lab/recipe-manager/{slug}
-exec claude --dangerously-skip-permissions -p "\$(cat /tmp/ns-{numéro}.txt | sed 's|{nightshift_token}|'\$NIGHTSHIFT_TOKEN'|g')"
+exec claude --dangerously-skip-permissions -p "$(cat /tmp/ns-{numéro}.txt \
+  | sed 's|{nightshift_token}|{NIGHTSHIFT_TOKEN_RESOLVED}|g' \
+  | sed 's|{base_branch}|{BASE_BRANCH_RESOLVED}|g')"
 SCRIPT
 chmod +x /tmp/ns-run-{numéro}.sh
 
@@ -295,37 +283,17 @@ tmux send-keys -t "nightshift:#{numéro}" "bash /tmp/ns-run-{numéro}.sh" Enter
 
 ---
 
-### 8. ttyd — terminal web mobile (si disponible)
-
-```bash
-if command -v ttyd &>/dev/null; then
-  ttyd -p 7681 -W tmux attach-session -t nightshift &
-  echo "📱 http://$(hostname -I | awk '{print $1}'):7681"
-fi
-```
-
----
-
-### 9. Rapport final
+### 8. Rapport final
 
 ```
 🌙 Night shift lancé — {N} issues
 
 {pour chaque issue}
-  #{numéro} — {titre}
+  [{type}] #{numéro} — {titre}
   Branch   : {type}/{numéro}-{slug}
   Worktree : recipe-manager/{slug}/
   Port     : {port}
-
-Monitoring :
-  ✓ GitHub comments (app GitHub mobile)
-  ✓ ntfy.sh → https://ntfy.sh/{topic}
-  {si ttyd} ✓ Terminal web → http://{ip}:7681
-
-{si qrencode disponible, générer et afficher le QR ntfy ici}
-```bash
-qrencode -t ANSIUTF8 "https://ntfy.sh/{topic}"
-```
+  GitHub   : https://github.com/jordy-manner/recipe-manager/issues/{numéro}
 
 Commandes utiles :
   tmux attach -t nightshift               # voir toutes les fenêtres
@@ -341,3 +309,4 @@ Commandes utiles :
 - Claude lancé **en parallèle** dans chaque window tmux une fois tous les worktrees prêts.
 - Si plusieurs issues touchent le schema Prisma → signaler le risque dans le rapport final.
 - Pour tuer un seul Claude : `tmux kill-window -t "nightshift:#{numéro}"`.
+- Labels gérés via `gh api .../issues/{n}/labels` (POST/DELETE) — `gh issue edit --add-label/--remove-label` échoue silencieusement (Projects classic déprécié).

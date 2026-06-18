@@ -84,8 +84,11 @@ Itérer si besoin. Ne pas créer l'issue avant validation explicite.
 gh issue create \
   --title "{titre en anglais}" \
   --body "{corps validé}" \
+  --label "Type:{Feat|Fix|Chore}" \
   --repo jordy-manner/recipe-manager
 ```
+
+Le label correspond au type choisi à l'étape 1 : `feat` → `Type:Feat`, `fix` → `Type:Fix`, `chore` → `Type:Chore`.
 
 Récupérer le **numéro** retourné (ex. `#12`).
 
@@ -134,7 +137,7 @@ recipe-manager/
 Trouver le premier port libre dans la plage `3001–3009` (ports non utilisés par un process ni par un autre worktree) :
 
 ```bash
-for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009; do
+for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014 3015 3016 3017 3018 3019; do
   ss -tlnp 2>/dev/null | grep -q ":${port}[^0-9]" || { echo $port; break; }
 done
 ```

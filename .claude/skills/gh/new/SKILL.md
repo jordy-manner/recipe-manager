@@ -1,9 +1,9 @@
 ---
-name: task-new
-description: Crée une nouvelle issue GitHub + branche + worktree pour une tâche (feat/fix/chore). À utiliser dès qu'on commence une nouvelle tâche (ex. « task-new », « nouvelle tâche », « crée une issue », « commence un fix »). Collecte le contexte via un jeu de questions-réponses avant de créer l'issue.
+name: gh new
+description: Crée une nouvelle issue GitHub + branche + worktree pour une tâche (feat/fix/chore). À utiliser dès qu'on commence une nouvelle tâche (ex. « /gh new », « nouvelle tâche », « crée une issue », « commence un fix »). Collecte le contexte via un jeu de questions-réponses avant de créer l'issue.
 ---
 
-# task-new — nouvelle issue + branche + worktree
+# gh new — nouvelle issue + branche + worktree
 
 Workflow complet pour démarrer une tâche : collecte de contexte par Q&A → issue GitHub → branche conventionnelle → worktree isolé.
 
@@ -134,7 +134,7 @@ recipe-manager/
 
 ### 6b. Détecter et réserver le port dev
 
-Trouver le premier port libre dans la plage `3001–3009` (ports non utilisés par un process ni par un autre worktree) :
+Trouver le premier port libre dans la plage `3001–3019` (ports non utilisés par un process ni par un autre worktree) :
 
 ```bash
 for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014 3015 3016 3017 3018 3019; do

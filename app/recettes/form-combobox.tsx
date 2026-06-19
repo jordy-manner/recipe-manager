@@ -134,7 +134,7 @@ export function FormCombobox({
           autoComplete="off"
           onFocus={() => {
             setOpen(true);
-            setQ("");
+            setQ(value);
             setActive(0);
           }}
           onChange={(e) => {
@@ -153,6 +153,22 @@ export function FormCombobox({
           >
             <Icon name="alert" size={11} /> à compléter
           </span>
+        )}
+        {value && (
+          <button
+            type="button"
+            aria-label="Effacer la sélection"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onPick("");
+              onChange?.("");
+              setQ("");
+              setOpen(false);
+            }}
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-ink-faint transition hover:text-ink"
+          >
+            <Icon name="x" size={13} />
+          </button>
         )}
         <Icon
           name="chevron"

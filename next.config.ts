@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {
     // Recipe photo uploads (Cloudinary upload + the Gemini scan) post files to
     // Server Actions; the default 1 MB body cap is too small for photos. Images

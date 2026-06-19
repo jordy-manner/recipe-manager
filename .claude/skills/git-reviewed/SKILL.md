@@ -128,6 +128,7 @@ gh pr edit {number} --remove-label "Status:Reviewed"
 Suivre **intégralement** les étapes de la skill `preview-release` (lire `.claude/skills/preview-release/SKILL.md`), en restant sur la branche `{baseRefName}`.
 
 Points clés à respecter :
+- **Synchroniser les tags distants avant tout calcul de version** : `git fetch --tags` (un tag peut avoir été poussé depuis un autre worktree — sans ce fetch, `git describe` retourne un tag obsolète)
 - Incrémenter le **patch** du dernier tag git (`git describe --tags --abbrev=0`)
 - Bumper `APP_RELEASE` dans `.env`
 - Entrée CHANGELOG : mentionner le titre de la PR mergée (ex. `- Merge #42: Local image storage`)

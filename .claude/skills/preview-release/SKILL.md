@@ -35,7 +35,8 @@ Cette règle prime sur tout réglage de permissions.
 1. **Se placer sur la branche de version.** C'est la branche courante si elle correspond à `vX.Y` ; sinon `git checkout <branche-version>`. Ne jamais commiter sur `main`.
 2. **Préambule — identité + prochain tag + bump `APP_RELEASE`.**
    - Garde-fou identité : `git config --local user.name "jordy-manner"` et `git config --local user.email "jordy.manner@milkcreation.fr"`.
-   - Lire le dernier tag : `git describe --tags --abbrev=0` (ex. `v0.1.6`). Incrémenter le **patch** → `vX.Y.Z` (ex. `v0.1.7`). Le `major.minor` suit le nom de la branche de version. **Mémoriser ce `vX.Y.Z`** (sert ici ET au tag).
+   - Synchroniser les tags distants : `git fetch --tags` (obligatoire — un tag peut avoir été poussé depuis un autre worktree et être absent localement, ce qui ferait calculer un numéro déjà pris).
+   - Lire le dernier tag **reachable depuis HEAD** : `git describe --tags --abbrev=0` (ex. `v0.1.6`). Incrémenter le **patch** → `vX.Y.Z` (ex. `v0.1.7`). Si le tag calculé existe déjà (`git tag -l vX.Y.Z`), incrémenter à nouveau. Le `major.minor` suit le nom de la branche de version. **Mémoriser ce `vX.Y.Z`** (sert ici ET au tag).
    - Écrire `APP_RELEASE=vX.Y.Z` dans `.env` (le `.env` commité correspond toujours à son tag ; le footer de l'app affiche cette version).
 3. **Mettre à jour le `CHANGELOG.md` (OBLIGATOIRE à chaque release).** Ajouter en **haut de la liste** (juste sous l'intro, avant l'entrée précédente) une nouvelle section pour le tag courant :
    - En-tête `## [vX.Y.Z] — AAAA-MM-JJ` (date du jour).

@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.4.1] — 2026-06-19
+
+- **favicon.ico**: add `public/favicon.ico` (16/32/48 px, generated from `app/icon.svg`) so Vercel and browsers resolve `/favicon.ico` to the current egg-yolk logo.
+
 ## [v0.4.0] — 2026-06-18
 
 - **Rebrand → Mealoday**: app renamed from "Recipe Manager" to Mealoday — dark chrome theme, egg-yolk logo, updated recipe views.

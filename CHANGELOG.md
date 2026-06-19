@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.4.3] — 2026-06-19
+
+- **Parametres redirect** (#53): `/parametres` now redirects to `/parametres/general` instead of `/parametres/ingredients`.
+
 ## [v0.4.2] — 2026-06-19
 
 - **Homepage filters in-place** (#54): `SearchControls` now uses `usePathname()` instead of hardcoded `/recettes` — filters update the current page URL in place; `app/page.tsx` renders filtered results when search params are active.

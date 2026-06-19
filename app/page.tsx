@@ -1,40 +1,120 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { isSearchActive, searchRecipeIds, type SearchParams } from "@/lib/search";
 import { Icon } from "./components/icons";
 import {
   cardInclude,
   EmptyState,
   MagazineGrid,
+  RecipeGrid,
   SectionHead,
   toCard,
   type CardRow,
 } from "./recettes/_shared";
 import { SearchControls } from "./recettes/search-controls";
+import type { RecipeCardData } from "./components/recipe-card";
 
 export const metadata = { title: "Mealoday — Recettes maison" };
 
 // DB-dependent data → rendered on demand (no static prerender at build time).
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const [categories, total, popularRows, recentRows] = await Promise.all([
+const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const params: SearchParams = {
+    q: str(sp.q),
+    byIngredient: str(sp.ing) === "1",
+    category: str(sp.cat) || null,
+    maxTime: Number(str(sp.t)) || 0,
+    difficulty: Number(str(sp.d)) || 0,
+  };
+  const active = isSearchActive(params);
+
+  const [categories, total] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.recipe.count(),
-    prisma.recipe.findMany({
-      where: { popular: true },
-      orderBy: { createdAt: "desc" },
-      include: cardInclude,
-    }) as unknown as Promise<CardRow[]>,
-    prisma.recipe.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      include: cardInclude,
-    }) as unknown as Promise<CardRow[]>,
   ]);
 
-  // Featured section: popular recipes, or the 4 latest as a fallback.
-  const hasPopular = popularRows.length > 0;
-  const featured = (hasPopular ? popularRows : recentRows).map(toCard);
+  let mainSection: React.ReactNode;
+
+  if (active) {
+    const hits = await searchRecipeIds(params);
+    const rows = hits.length
+      ? ((await prisma.recipe.findMany({
+          where: { id: { in: hits.map((h) => h.id) } },
+          include: cardInclude,
+        })) as unknown as CardRow[])
+      : [];
+    const byId = new Map(rows.map((r) => [r.id, toCard(r)]));
+    const results = hits.map((h) => byId.get(h.id)).filter(Boolean) as RecipeCardData[];
+
+    mainSection = (
+      <section>
+        <SectionHead
+          title={`${results.length} recette${results.length > 1 ? "s" : ""}`}
+          action={
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-[14px] font-bold text-accent-ink transition hover:text-accent"
+            >
+              Réinitialiser
+            </Link>
+          }
+        />
+        {results.length > 0 ? (
+          <RecipeGrid recipes={results} />
+        ) : (
+          <p className="rounded-card border border-dashed border-line px-4 py-12 text-center text-ink-soft">
+            Aucune recette ne correspond à votre recherche.
+          </p>
+        )}
+      </section>
+    );
+  } else {
+    const [popularRows, recentRows] = await Promise.all([
+      prisma.recipe.findMany({
+        where: { popular: true },
+        orderBy: { createdAt: "desc" },
+        include: cardInclude,
+      }) as unknown as Promise<CardRow[]>,
+      prisma.recipe.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 4,
+        include: cardInclude,
+      }) as unknown as Promise<CardRow[]>,
+    ]);
+    const hasPopular = popularRows.length > 0;
+    const featured = (hasPopular ? popularRows : recentRows).map(toCard);
+
+    mainSection =
+      total === 0 ? (
+        <EmptyState />
+      ) : (
+        <section>
+          <SectionHead
+            icon={
+              hasPopular ? <Icon name="flame" size={24} className="text-accent" /> : undefined
+            }
+            title={hasPopular ? "Populaires cette semaine" : "Dernières recettes"}
+            action={
+              <Link
+                href="/recettes"
+                className="inline-flex items-center gap-1.5 text-[14px] font-bold text-accent-ink transition hover:gap-2.5 hover:text-accent"
+              >
+                Tout voir <Icon name="arrow" size={16} />
+              </Link>
+            }
+          />
+          <MagazineGrid recipes={featured} />
+        </section>
+      );
+  }
 
   return (
     <main className="mx-auto w-full max-w-content animate-fade-up px-[18px] sm:px-8">
@@ -56,30 +136,7 @@ export default async function HomePage() {
         <SearchControls categories={categories.map((c) => c.name)} />
       </section>
 
-      {/* One featured section only — the full catalogue lives on /recettes. */}
-      <div className="pb-4 pt-7">
-        {total === 0 ? (
-          <EmptyState />
-        ) : (
-          <section>
-            <SectionHead
-              icon={
-                hasPopular ? <Icon name="flame" size={24} className="text-accent" /> : undefined
-              }
-              title={hasPopular ? "Populaires cette semaine" : "Dernières recettes"}
-              action={
-                <Link
-                  href="/recettes"
-                  className="inline-flex items-center gap-1.5 text-[14px] font-bold text-accent-ink transition hover:gap-2.5 hover:text-accent"
-                >
-                  Tout voir <Icon name="arrow" size={16} />
-                </Link>
-              }
-            />
-            <MagazineGrid recipes={featured} />
-          </section>
-        )}
-      </div>
+      <div className="pb-4 pt-7">{mainSection}</div>
     </main>
   );
 }

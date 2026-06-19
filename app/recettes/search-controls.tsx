@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "../components/icons";
 import { FilterDisclosure } from "../components/filter-disclosure";
@@ -28,6 +28,7 @@ const DEBOUNCE_MS = 300;
  */
 export function SearchControls({ categories }: { categories: string[] }) {
   const router = useRouter();
+  const pathname = usePathname();
   const sp = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
@@ -59,7 +60,7 @@ export function SearchControls({ categories }: { categories: string[] }) {
         else params.set(k, v);
       }
       const qs = params.toString();
-      const url = qs ? `/recettes?${qs}` : "/recettes";
+      const url = qs ? `${pathname}?${qs}` : pathname;
       startTransition(() => {
         if (replace) router.replace(url);
         else router.push(url);

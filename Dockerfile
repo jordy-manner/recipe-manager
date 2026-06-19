@@ -4,20 +4,20 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# postinstall runs prisma generate; DATABASE_URL is not needed for generation
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
-RUN npm ci --omit=dev
+# postinstall runs prisma generate; skip it here — prisma CLI absent with --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # ── Stage 2: full build ───────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
+# Copy schema before npm ci so postinstall (prisma generate) can find it
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+# Placeholder URL needed before npm ci — postinstall runs prisma generate which reads DATABASE_URL
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN npm ci
 COPY . .
-# Placeholder URL: Next.js static analysis must not hit a real DB at build time.
-# Pages that query Prisma are dynamic (cookies/headers), so no actual connection
-# is made during build.
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -35,14 +35,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public          ./public
 
-# Prisma CLI + generated client for migrate deploy
-COPY --from=deps    --chown=nextjs:nodejs /app/node_modules/prisma       ./node_modules/prisma
-COPY --from=deps    --chown=nextjs:nodejs /app/node_modules/@prisma      ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma      ./node_modules/.prisma
-# dotenv is required by prisma.config.ts at migrate time
-COPY --from=deps    --chown=nextjs:nodejs /app/node_modules/dotenv       ./node_modules/dotenv
-
-# Schema + migrations + Prisma config
+# Full prod node_modules — prisma CLI dep tree (effect, fast-check…) too deep to cherry-pick
+COPY --from=deps    --chown=nextjs:nodejs /app/node_modules    ./node_modules
+# Schema + migrations + config (datasource URL for prisma migrate deploy)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma          ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./
 

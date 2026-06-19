@@ -12,8 +12,8 @@ const globalForPrisma = globalThis as unknown as {
 
 const log =
   process.env.NODE_ENV === "development"
-    ? (["error", "warn"] as const)
-    : (["error"] as const);
+    ? ["error" as const, "warn" as const]
+    : ["error" as const];
 
 function buildClient(): PrismaClient {
   // Neon serverless adapter (Vercel/Neon): set PRISMA_DRIVER_ADAPTER=neon.
@@ -22,7 +22,9 @@ function buildClient(): PrismaClient {
     const { PrismaNeon } = require("@prisma/adapter-neon");
     return new PrismaClient({ adapter: new PrismaNeon({ connectionString }), log });
   }
-  return new PrismaClient({ log });
+  const { Pool } = require("pg");
+  const { PrismaPg } = require("@prisma/adapter-pg");
+  return new PrismaClient({ adapter: new PrismaPg(new Pool({ connectionString })), log });
 }
 
 // Singleton: in dev, Next's hot-reload recreates the module on every edit.

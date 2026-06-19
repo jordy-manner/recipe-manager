@@ -137,7 +137,7 @@ function CellCombo({
 }: {
   value: string | null;
   options: ComboOption[];
-  onPick: (value: string) => void;
+  onPick: (value: string | null) => void;
   onCreate?: (name: string) => void;
   warn?: boolean;
   placeholder?: string;
@@ -229,7 +229,7 @@ function CellCombo({
           autoComplete="off"
           onFocus={() => {
             setOpen(true);
-            setQ("");
+            setQ(selectedLabel);
             setActive(0);
           }}
           onChange={(e) => {
@@ -240,6 +240,20 @@ function CellCombo({
           onKeyDown={onKeyDown}
           className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-ink outline-none placeholder:text-ink-faint"
         />
+        {value && (
+          <button
+            type="button"
+            aria-label="Effacer la sélection"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onPick(null);
+              close();
+            }}
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-ink-faint transition hover:text-ink"
+          >
+            <Icon name="x" size={12} />
+          </button>
+        )}
         <Icon
           name="chevron"
           size={13}

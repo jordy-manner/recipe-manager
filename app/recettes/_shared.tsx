@@ -141,6 +141,29 @@ export function SectionHead({
   );
 }
 
+export function ViewSwitcher({ current, basePath = "/recettes" }: { current: RecipeView; basePath?: string }) {
+  return (
+    <div className="flex shrink-0 gap-1" role="group" aria-label="Affichage">
+      {RECIPE_VIEWS.map((v) => {
+        const href = v.key === "magazine" ? basePath : `${basePath}?view=${v.key}`;
+        return (
+          <Link
+            key={v.key}
+            href={href}
+            aria-label={v.label}
+            title={v.label}
+            className={`grid h-9 w-9 place-items-center rounded-input transition ${
+              current === v.key ? "bg-ink text-bg" : "text-ink-faint hover:bg-surface-muted hover:text-ink"
+            }`}
+          >
+            <Icon name={v.icon} size={18} />
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export function EmptyState() {
   return (
     <div className="rounded-card border border-dashed border-line bg-surface px-6 py-16 text-center">

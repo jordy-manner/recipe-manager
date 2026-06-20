@@ -2,13 +2,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { isSearchActive, searchRecipeIds, type SearchParams } from "@/lib/search";
 import type { RecipeCardData, RecipeView } from "../components/recipe-card";
-import { Icon } from "../components/icons";
 import {
   cardInclude,
   EmptyState,
   RECIPE_VIEWS,
   RecipesLayout,
   SectionHead,
+  ViewSwitcher,
   toCard,
   type CardRow,
 } from "./_shared";
@@ -20,29 +20,6 @@ export const metadata = { title: "Catalogue" };
 export const dynamic = "force-dynamic";
 
 const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
-
-function ViewSwitcher({ current, extraParams = "" }: { current: RecipeView; extraParams?: string }) {
-  return (
-    <div className="flex shrink-0 gap-1" role="group" aria-label="Affichage">
-      {RECIPE_VIEWS.map((v) => {
-        const base = v.key === "magazine" ? `/recettes${extraParams ? `?${extraParams}` : ""}` : `/recettes?view=${v.key}${extraParams ? `&${extraParams}` : ""}`;
-        return (
-          <Link
-            key={v.key}
-            href={base}
-            aria-label={v.label}
-            title={v.label}
-            className={`grid h-9 w-9 place-items-center rounded-input transition ${
-              current === v.key ? "bg-ink text-bg" : "text-ink-faint hover:bg-surface-muted hover:text-ink"
-            }`}
-          >
-            <Icon name={v.icon} size={18} />
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
 
 export default async function CataloguePage({
   searchParams,

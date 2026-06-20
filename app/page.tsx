@@ -5,14 +5,15 @@ import { Icon } from "./components/icons";
 import {
   cardInclude,
   EmptyState,
-  MagazineGrid,
-  RecipeGrid,
+  RECIPE_VIEWS,
+  RecipesLayout,
   SectionHead,
+  ViewSwitcher,
   toCard,
   type CardRow,
 } from "./recettes/_shared";
 import { SearchControls } from "./recettes/search-controls";
-import type { RecipeCardData } from "./components/recipe-card";
+import type { RecipeCardData, RecipeView } from "./components/recipe-card";
 
 export const metadata = { title: "Mealoday — Recettes maison" };
 
@@ -34,6 +35,8 @@ export default async function HomePage({
     maxTime: Number(str(sp.t)) || 0,
     difficulty: Number(str(sp.d)) || 0,
   };
+  const viewRaw = str(sp.view) as RecipeView;
+  const view: RecipeView = RECIPE_VIEWS.some((v) => v.key === viewRaw) ? viewRaw : "magazine";
   const active = isSearchActive(params);
 
   const [categories, total] = await Promise.all([
@@ -59,16 +62,19 @@ export default async function HomePage({
         <SectionHead
           title={`${results.length} recette${results.length > 1 ? "s" : ""}`}
           action={
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1 text-[14px] font-bold text-accent-ink transition hover:text-accent"
-            >
-              Réinitialiser
-            </Link>
+            <div className="flex items-center gap-3">
+              <ViewSwitcher current={view} basePath="/" />
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1 text-[14px] font-bold text-accent-ink transition hover:text-accent"
+              >
+                Réinitialiser
+              </Link>
+            </div>
           }
         />
         {results.length > 0 ? (
-          <RecipeGrid recipes={results} />
+          <RecipesLayout view={view} recipes={results} />
         ) : (
           <p className="rounded-card border border-dashed border-line px-4 py-12 text-center text-ink-soft">
             Aucune recette ne correspond à votre recherche.
@@ -103,15 +109,18 @@ export default async function HomePage({
             }
             title={hasPopular ? "Populaires cette semaine" : "Dernières recettes"}
             action={
-              <Link
-                href="/recettes"
-                className="inline-flex items-center gap-1.5 text-[14px] font-bold text-accent-ink transition hover:gap-2.5 hover:text-accent"
-              >
-                Tout voir <Icon name="arrow" size={16} />
-              </Link>
+              <div className="flex items-center gap-3">
+                <ViewSwitcher current={view} basePath="/" />
+                <Link
+                  href="/recettes"
+                  className="inline-flex items-center gap-1.5 text-[14px] font-bold text-accent-ink transition hover:gap-2.5 hover:text-accent"
+                >
+                  Tout voir <Icon name="arrow" size={16} />
+                </Link>
+              </div>
             }
           />
-          <MagazineGrid recipes={featured} />
+          <RecipesLayout view={view} recipes={featured} />
         </section>
       );
   }

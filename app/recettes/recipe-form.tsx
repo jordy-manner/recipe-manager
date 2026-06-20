@@ -72,6 +72,7 @@ export type RecipeFormValues = {
   rating: string;
   author: string;
   popular: boolean;
+  ingredientStep: boolean;
   kcal: string;
   protein: string;
   carbs: string;
@@ -100,6 +101,7 @@ export const EMPTY_RECIPE_VALUES: RecipeFormValues = {
   rating: "",
   author: "",
   popular: false,
+  ingredientStep: false,
   kcal: "",
   protein: "",
   carbs: "",
@@ -465,6 +467,7 @@ export function RecipeForm({
     rating: defaultValues.rating,
     author: defaultValues.author,
     popular: defaultValues.popular,
+    ingredientStep: defaultValues.ingredientStep,
     kcal: defaultValues.kcal,
     protein: defaultValues.protein,
     carbs: defaultValues.carbs,
@@ -1353,6 +1356,16 @@ export function RecipeForm({
             />
             Mettre en avant dans « Populaires cette semaine »
           </label>
+          <label className="mt-2 inline-flex cursor-pointer items-center gap-2.5 text-[14px] font-semibold text-ink">
+            <input
+              type="checkbox"
+              checked={f.ingredientStep}
+              onChange={(e) => set({ ingredientStep: e.target.checked })}
+              className="h-4 w-4 accent-[var(--color-accent)]"
+            />
+            Ajouter une étape de préparation des ingrédients
+          </label>
+          <input type="hidden" name="ingredientStep" value={f.ingredientStep ? "true" : "false"} />
         </Block>
 
         {/* Actions */}

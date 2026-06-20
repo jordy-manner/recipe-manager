@@ -94,6 +94,7 @@ export default async function EditRecipePage({ params }: Props) {
           rating: recipe.rating?.toString() ?? "",
           author: recipe.author ?? "",
           popular: recipe.popular,
+          ingredientStep: recipe.ingredientStep,
           kcal: recipe.kcal?.toString() ?? "",
           protein: recipe.protein?.toString() ?? "",
           carbs: recipe.carbs?.toString() ?? "",

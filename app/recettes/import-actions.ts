@@ -69,6 +69,7 @@ function emptyValues(): RecipeFormValues {
     rating: "",
     author: "",
     popular: false,
+    ingredientStep: false,
     kcal: "",
     protein: "",
     carbs: "",

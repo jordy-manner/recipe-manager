@@ -52,7 +52,7 @@ export function SettingsRail({
                   <span className="flex-1">{it.label}</span>
                   {count > 0 && (
                     <span
-                      className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white"
+                      className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-[#151517]"
                       title={`${count} à compléter`}
                     >
                       {count > 99 ? "99+" : count}
@@ -66,7 +66,7 @@ export function SettingsRail({
       </nav>
       {release && (
         <div className="mt-6 px-3 font-mono text-[11px] text-ink-faint">
-          Mealoday · {release}
+          Sur le Plat · {release}
         </div>
       )}
     </aside>

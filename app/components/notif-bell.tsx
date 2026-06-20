@@ -63,7 +63,7 @@ export function NotifBell({
       >
         <Icon name="bell" size={19} />
         {todoCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white ring-2 ${dark ? "ring-ink" : "ring-bg"}`}>
+          <span className={`absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-[#151517] ring-2 ${dark ? "ring-ink" : "ring-bg"}`}>
             {badge}
           </span>
         )}

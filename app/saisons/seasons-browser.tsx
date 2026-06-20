@@ -162,8 +162,8 @@ export function SeasonsBrowser({
       {/* Hero */}
       <section className="pb-6 pt-12">
         <p className="eyebrow">De saison · {eyebrow}</p>
-        <h1 className="mb-[18px] mt-3 font-display text-[clamp(38px,5.2vw,64px)] font-medium leading-[1.0] tracking-[-0.025em]">
-          Que cuisiner <em className="italic text-accent">{titleEm}</em>&nbsp;?
+        <h1 className="hero-title mb-[18px] mt-3 font-display text-[clamp(38px,5.2vw,64px)] font-extrabold leading-[1.0] tracking-[-0.025em]">
+          Que cuisiner <em>{titleEm}</em>&nbsp;?
         </h1>
         <p className="mb-7 max-w-[560px] text-[18px] leading-relaxed text-ink-soft">
           Sélectionnez un ou plusieurs mois, filtrez par catégorie et trouvez les produits de

@@ -123,7 +123,7 @@ function Seg<T extends string>({
             (value === v
               ? soft
                 ? "bg-accent-soft text-accent-ink"
-                : "bg-accent text-white"
+                : "bg-accent text-[#151517]"
               : "text-ink-soft hover:bg-surface-muted")
           }
         >
@@ -368,7 +368,7 @@ export function WidgetsDock() {
             className="w-[248px] rounded-[20px] border border-line bg-surface p-2 shadow-card-lg animate-fade-up"
           >
             <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-2">
-              <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-accent text-white">
+              <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-accent text-[#151517]">
                 <Icon name="grid" size={17} />
               </span>
               <span className="flex-1 font-display text-[17px] font-semibold text-ink">Widgets</span>
@@ -417,7 +417,7 @@ export function WidgetsDock() {
           aria-expanded={menuOpen}
           aria-controls={menuOpen ? menuId : undefined}
           onClick={() => setMenuOpen((o) => !o)}
-          className="relative grid h-[54px] w-[54px] place-items-center rounded-full bg-accent text-white shadow-card-lg transition hover:-translate-y-0.5 hover:bg-accent-deep sm:h-[60px] sm:w-[60px]"
+          className="relative grid h-[54px] w-[54px] place-items-center rounded-full bg-accent text-[#151517] shadow-card-lg transition hover:-translate-y-0.5 hover:bg-accent-deep sm:h-[60px] sm:w-[60px]"
         >
           <Icon name={menuOpen ? "x" : "grid"} size={24} strokeWidth={2} />
           {running.length > 0 && (
@@ -449,7 +449,7 @@ export function WidgetsDock() {
           >
             {/* header */}
             <div className="sticky top-0 flex items-center gap-2.5 rounded-t-[26px] bg-accent-soft px-[18px] py-4 sm:rounded-t-[30px]">
-              <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-accent text-white">
+              <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-accent text-[#151517]">
                 <Icon name="timer" size={19} />
               </span>
               <span id={titleId} className="flex-1 font-display text-[22px] font-semibold text-accent-ink">
@@ -578,7 +578,7 @@ export function WidgetsDock() {
               <button
                 type="button"
                 onClick={launch}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent p-3 text-[15px] font-bold text-white shadow-card transition hover:bg-accent-deep"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent p-3 text-[15px] font-bold text-[#151517] shadow-card transition hover:bg-accent-deep"
               >
                 <Icon name="play" size={18} /> Lancer le minuteur
               </button>

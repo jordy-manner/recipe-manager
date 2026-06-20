@@ -184,7 +184,7 @@ export function RecipeCardRow({
             {r.rating.toFixed(1)}
           </span>
         )}
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition group-hover:bg-accent group-hover:text-white">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition group-hover:bg-accent group-hover:text-[#151517]">
           <Icon name="arrow" size={18} />
         </span>
       </div>

@@ -3,7 +3,7 @@ import { SettingsRail } from "./_rail";
 import { getNotifications } from "@/lib/notifications";
 
 export const metadata: Metadata = {
-  title: { default: "Paramètres", template: "%s · Paramètres · Mealoday" },
+  title: { default: "Paramètres", template: "%s · Paramètres · Sur le Plat" },
 };
 
 // Common shell for every /parametres sub-route: the grouped side rail + the

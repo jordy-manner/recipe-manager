@@ -20,26 +20,27 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
   });
 
   return (
-    <footer className="mt-14 border-t border-white/[0.08]" style={{ background: "#101012" }}>
+    // footer-chrome: #101012 in dark, var(--color-surface) in light (see globals.css)
+    <footer className="footer-chrome mt-14 border-t border-line-soft">
       {/* Mega sitemap */}
       <div className="mx-auto grid w-full max-w-content grid-cols-1 gap-10 px-[18px] pt-[60px] pb-10 sm:grid-cols-3 sm:px-8">
         {/* Recettes */}
         <div>
           <Link
             href="/recettes"
-            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-white/90 hover:text-white"
+            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-ink hover:text-ink transition-colors"
           >
             Recettes
           </Link>
           {categories.length === 0 ? (
-            <p className="text-[13.5px] text-white/40">Aucune catégorie</p>
+            <p className="text-[13.5px] text-ink-faint">Aucune catégorie</p>
           ) : (
             <ul className="space-y-2">
               {categories.map((c) => (
                 <li key={c.name}>
                   <Link
                     href={`/recettes?cat=${encodeURIComponent(c.name)}`}
-                    className="text-[13.5px] text-white/55 hover:text-white transition-colors"
+                    className="text-[13.5px] text-ink-soft hover:text-ink transition-colors"
                   >
                     {c.name}
                   </Link>
@@ -53,7 +54,7 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
         <div>
           <Link
             href="/saisons"
-            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-white/90 hover:text-white"
+            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-ink hover:text-ink transition-colors"
           >
             Saisons
           </Link>
@@ -62,7 +63,7 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="text-[13.5px] text-white/55 hover:text-white transition-colors"
+                  className="text-[13.5px] text-ink-soft hover:text-ink transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -75,14 +76,14 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
         <div>
           <Link
             href="/parametres"
-            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-white/90 hover:text-white"
+            className="mb-4 block text-[13.5px] font-semibold uppercase tracking-[0.1em] text-ink hover:text-ink transition-colors"
           >
             Paramètres
           </Link>
           <div className="space-y-5">
             {SETTINGS_NAV.map((g) => (
               <div key={g.group}>
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/35">
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                   {g.group}
                 </p>
                 <ul className="space-y-1.5">
@@ -90,7 +91,7 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
                     <li key={it.slug}>
                       <Link
                         href={`/parametres/${it.slug}`}
-                        className="text-[13.5px] text-white/55 hover:text-white transition-colors"
+                        className="text-[13.5px] text-ink-soft hover:text-ink transition-colors"
                       >
                         {it.label}
                       </Link>
@@ -104,28 +105,19 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
       </div>
 
       {/* Logo + copyright strip */}
-      <div className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-6 border-t border-white/[0.08] px-[18px] pb-12 pt-8 sm:px-8">
+      <div className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-6 border-t border-line-soft px-[18px] pb-12 pt-8 sm:px-8">
         <div className="flex flex-col items-start gap-2">
           <Logo size={46} />
-          <p
-            style={{
-              fontFamily: "var(--font-outfit, Outfit, system-ui, sans-serif)",
-              fontWeight: 600,
-              fontSize: 12,
-              letterSpacing: "0.05em",
-              color: "rgba(255,255,255,0.6)",
-              lineHeight: 1,
-            }}
-          >
+          <p className="text-[12px] font-semibold tracking-[0.05em] text-ink-soft">
             L&apos;app des œufs frais
             {recipeCount != null && ` · ${recipeCount} recette${recipeCount > 1 ? "s" : ""}`}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 text-right">
-          <p className="text-[13.5px] text-white/50">
+          <p className="text-[13.5px] text-ink-soft">
             © {new Date().getFullYear()} Sur le Plat. Tous droits réservés.
           </p>
-          <span className="rounded-md bg-white/[0.08] px-2.5 py-1 font-mono text-[12px] text-white/[0.62]">
+          <span className="rounded-md bg-surface-muted px-2.5 py-1 font-mono text-[12px] text-ink-faint">
             Release {release}
           </span>
         </div>

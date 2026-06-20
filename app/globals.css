@@ -279,6 +279,16 @@ body {
 }
 
 /*
+ * Site footer — #101012 in dark, var(--color-surface) = #fffdf3 in light.
+ */
+.footer-chrome {
+  background: #101012;
+}
+[data-theme="light"] .footer-chrome {
+  background: var(--color-surface);
+}
+
+/*
  * Preloader — theme-aware full-screen overlay.
  * data-theme is set before first paint by ThemeScript, so these selectors fire
  * before the loader is visible and produce no flash.

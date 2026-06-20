@@ -19,6 +19,7 @@ export default async function RecipeDetailPage({ params }: Props) {
   const row = await prisma.recipe.findUnique({
     where: { slug },
     include: {
+      servingUnit: { select: { name: true } },
       recipeIngredients: {
         include: { ingredient: true, unit: true },
         orderBy: { position: "asc" },
@@ -87,6 +88,7 @@ export default async function RecipeDetailPage({ params }: Props) {
     title: flat.title,
     description: flat.description,
     servings: flat.servings,
+    servingUnit: row.servingUnit?.name ?? null,
     prepTime: flat.prepTime,
     cookTime: flat.cookTime,
     restTime: flat.restTime,

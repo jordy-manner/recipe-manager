@@ -23,6 +23,7 @@ export type RecipeDetailData = {
   title: string;
   description: string | null;
   servings: number | null;
+  servingUnit: string | null;
   prepTime: number | null;
   cookTime: number | null;
   restTime: number | null;
@@ -158,7 +159,7 @@ export function RecipeDetail({
             {recipe.servings != null && (
               <MetaCell
                 icon={<Icon name="users" size={18} />}
-                value={`${recipe.servings} personne${recipe.servings > 1 ? "s" : ""}`}
+                value={`${recipe.servings} ${recipe.servingUnit ?? "personnes"}`}
                 sub="Recette de base"
               />
             )}
@@ -207,7 +208,7 @@ export function RecipeDetail({
                 <Icon name="minus" size={16} />
               </button>
               <span className="px-3 text-[13px] text-ink-soft">
-                <b className="text-ink">{serves}</b> pers.
+                <b className="text-ink">{serves}</b> {recipe.servingUnit ?? "pers."}
               </span>
               <button
                 type="button"

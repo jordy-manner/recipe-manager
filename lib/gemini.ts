@@ -16,6 +16,7 @@ export type GeminiRecipe = {
   title?: string;
   description?: string;
   servings?: number | null;
+  servingUnit?: string | null;
   prepTime?: number | null;
   cookTime?: number | null;
   restTime?: number | null;
@@ -34,7 +35,8 @@ const RESPONSE_SCHEMA = {
   properties: {
     title: { type: "STRING", description: "Titre de la recette" },
     description: { type: "STRING", description: "Courte description, sinon vide" },
-    servings: { type: "INTEGER", description: "Nombre de portions" },
+    servings: { type: "INTEGER", description: "Nombre de portions (chiffre uniquement)" },
+    servingUnit: { type: "STRING", description: "Unité de la portion (personnes, verrines, crêpes, parts…), sinon omis" },
     prepTime: { type: "INTEGER", description: "Temps de préparation en minutes" },
     cookTime: { type: "INTEGER", description: "Temps de cuisson en minutes" },
     restTime: { type: "INTEGER", description: "Temps de repos en minutes" },
@@ -52,7 +54,7 @@ const RESPONSE_SCHEMA = {
     },
     steps: { type: "ARRAY", items: { type: "STRING", description: "Une étape de préparation" } },
   },
-  propertyOrdering: ["title", "description", "servings", "prepTime", "cookTime", "restTime", "ingredients", "steps"],
+  propertyOrdering: ["title", "description", "servings", "servingUnit", "prepTime", "cookTime", "restTime", "ingredients", "steps"],
 } as const;
 
 const PROMPT_IMAGE =

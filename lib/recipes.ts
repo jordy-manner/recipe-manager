@@ -61,6 +61,7 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
     title: formData.get("title"),
     description: formData.get("description"),
     servings: formData.get("servings"),
+    servingUnit: formData.get("servingUnit"),
     prepTime: formData.get("prepTime"),
     cookTime: formData.get("cookTime"),
     restTime: formData.get("restTime"),

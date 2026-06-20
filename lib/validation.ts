@@ -134,6 +134,7 @@ export const recipeInputSchema = z.object({
   title: z.string().trim().min(1, "Le titre est obligatoire"),
   description: trimmedOrNull,
   servings: intField("Le nombre de parts"),
+  servingUnit: trimmedOrNull,
   prepTime: intField("Le temps de préparation"),
   cookTime: intField("Le temps de cuisson"),
   restTime: intField("Le temps de repos"),

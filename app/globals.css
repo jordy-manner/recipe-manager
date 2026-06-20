@@ -200,6 +200,49 @@ body {
   transition: none !important;
 }
 
+/*
+ * Top bar chrome — eggshell in light, #101012 in dark.
+ * Using CSS data-theme selectors avoids React state + hydration flicker.
+ */
+.topbar-chrome {
+  background: var(--color-bg);
+}
+[data-theme="dark"] .topbar-chrome {
+  background: #101012;
+}
+
+/* Inactive nav link in top bar: ink/72 in light, white/75 in dark */
+.topbar-nav-inactive {
+  color: color-mix(in srgb, var(--color-ink) 72%, transparent);
+}
+.topbar-nav-inactive:hover {
+  background: rgb(0 0 0 / 0.08);
+  color: var(--color-ink);
+}
+[data-theme="dark"] .topbar-nav-inactive {
+  color: rgb(255 255 255 / 0.75);
+}
+[data-theme="dark"] .topbar-nav-inactive:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: white;
+}
+
+/* "Plus" dropdown button in top bar — same adaptive colors */
+.topbar-plus-inactive {
+  color: color-mix(in srgb, var(--color-ink) 72%, transparent);
+}
+.topbar-plus-inactive:hover {
+  background: rgb(0 0 0 / 0.08);
+  color: var(--color-ink);
+}
+[data-theme="dark"] .topbar-plus-inactive {
+  color: rgb(255 255 255 / 0.75);
+}
+[data-theme="dark"] .topbar-plus-inactive:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: white;
+}
+
 /* Eyebrow: mono uppercase label used above section/hero titles. */
 .eyebrow {
   font-family: var(--font-mono);

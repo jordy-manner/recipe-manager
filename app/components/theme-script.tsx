@@ -14,7 +14,7 @@ const DEFAULT_ACCENT = ACCENTS[0].id;
 // first node in <body> in the root layout.
 export function ThemeScript() {
   const js = `(function(){try{
-var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE)})||'light';
+var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE)})||'dark';
 var a=localStorage.getItem(${JSON.stringify(ACCENT_STORAGE)})||${JSON.stringify(DEFAULT_ACCENT)};
 var L=${JSON.stringify(LIGHT_TOKENS)},D=${JSON.stringify(DARK_TOKENS)},A=${JSON.stringify(ACCENTS)};
 var r=document.documentElement;r.setAttribute('data-theme',t);

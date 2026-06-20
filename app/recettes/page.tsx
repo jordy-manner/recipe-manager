@@ -111,7 +111,7 @@ export default async function CataloguePage({
     <main className="mx-auto w-full max-w-content animate-fade-up px-[18px] sm:px-8">
       <section className="pb-6 pt-12">
         <p className="eyebrow">Catalogue</p>
-        <h1 className="mb-7 mt-3 font-display text-[clamp(30px,4vw,44px)] font-medium tracking-[-0.02em]">
+        <h1 className="mb-7 mt-3 font-display text-[clamp(30px,4vw,44px)] font-extrabold tracking-[-0.02em]">
           Toutes les recettes
         </h1>
         <SearchControls categories={categories.map((c) => c.name)} />

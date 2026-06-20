@@ -53,7 +53,6 @@ export function Logo({ size = 21 }: { size?: number }) {
           textTransform: "uppercase",
           color: "#f5c700",
           WebkitTextStroke: `${Math.max(1, size * 0.07)}px #16181f`,
-          // @ts-expect-error -- non-standard but widely supported
           paintOrder: "stroke fill",
           textShadow: `-1px 1px 0 #15223d, -2px 2px 0 #15223d, -3px 3px 0 #15223d`,
           whiteSpace: "nowrap",

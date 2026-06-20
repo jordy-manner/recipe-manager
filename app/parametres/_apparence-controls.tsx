@@ -17,14 +17,14 @@ const THEMES: { id: ThemeMode; label: string }[] = [
 ];
 
 export function ApparenceControls() {
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [theme, setTheme] = useState<ThemeMode>("dark");
   const [accent, setAccent] = useState<AccentId>("Jaune");
 
   // Sync the controls with the preference the bootstrap script already applied.
   // localStorage is client-only (absent during SSR), so this must run after
   // mount — the initial light/Terracotta render matches the server markup.
   useEffect(() => {
-    const t = (localStorage.getItem(THEME_STORAGE) as ThemeMode) || "light";
+    const t = (localStorage.getItem(THEME_STORAGE) as ThemeMode) || "dark";
     const a = (localStorage.getItem(ACCENT_STORAGE) as AccentId) || "Jaune";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only store on mount
     setTheme(t);

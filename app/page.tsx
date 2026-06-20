@@ -15,7 +15,7 @@ import {
 import { SearchControls } from "./recettes/search-controls";
 import type { RecipeCardData, RecipeView } from "./components/recipe-card";
 
-export const metadata = { title: "Mealoday — Recettes maison" };
+export const metadata = { title: "Sur le Plat — Recettes maison" };
 
 // DB-dependent data → rendered on demand (no static prerender at build time).
 export const dynamic = "force-dynamic";
@@ -132,10 +132,10 @@ export default async function HomePage({
         <p className="eyebrow">
           Cuisine maison · {total} recette{total > 1 ? "s" : ""}
         </p>
-        <h1 className="mb-[22px] mt-3 font-display text-[clamp(44px,6vw,76px)] font-medium leading-[0.98] tracking-[-0.025em]">
+        <h1 className="hero-title mb-[22px] mt-3 font-display text-[clamp(44px,6vw,76px)] font-extrabold leading-[0.98] tracking-[-0.025em]">
           Qu&apos;est-ce qu&apos;on
           <br />
-          <em className="italic text-accent">cuisine</em>{" "}
+          <em>cuisine</em>{" "}
           aujourd&apos;hui&nbsp;?
         </h1>
         <p className="mb-8 max-w-[540px] text-[18px] leading-relaxed text-ink-soft">

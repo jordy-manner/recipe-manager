@@ -5,10 +5,10 @@ import { applyTheme, ACCENT_STORAGE, THEME_STORAGE, type ThemeMode } from "./the
 
 /** Lightbulb toggle: off = light mode, on (yellow) = dark mode. */
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [theme, setTheme] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    setTheme((localStorage.getItem(THEME_STORAGE) as ThemeMode) || "light");
+    setTheme((localStorage.getItem(THEME_STORAGE) as ThemeMode) || "dark");
   }, []);
 
   const toggle = () => {

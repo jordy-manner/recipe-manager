@@ -168,6 +168,9 @@ export async function createRecipeAction(
         slug,
         ...recipeScalars(input),
         ...image,
+        ...(input.servingUnit
+          ? { servingUnit: { connectOrCreate: { where: { name: input.servingUnit }, create: { name: input.servingUnit } } } }
+          : {}),
         recipeUtensils: { create: recipeUtensilsCreate(input) },
         recipeTags: { create: recipeTagsCreate(input) },
         recipeCategories: { create: recipeCategoriesCreate(input) },
@@ -221,6 +224,9 @@ export async function updateRecipeAction(
       data: {
         ...recipeScalars(input),
         ...image,
+        ...(input.servingUnit
+          ? { servingUnit: { connectOrCreate: { where: { name: input.servingUnit }, create: { name: input.servingUnit } } } }
+          : { servingUnitId: null }),
         recipeIngredients: { deleteMany: {} },
         recipeUtensils: { deleteMany: {}, create: recipeUtensilsCreate(input) },
         recipeTags: { deleteMany: {}, create: recipeTagsCreate(input) },

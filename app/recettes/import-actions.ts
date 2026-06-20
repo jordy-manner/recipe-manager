@@ -62,6 +62,7 @@ function emptyValues(): RecipeFormValues {
     title: "",
     description: "",
     servings: "",
+    servingUnit: "personnes",
     prepTime: "",
     cookTime: "",
     restTime: "",
@@ -171,11 +172,14 @@ function parseImage(img: unknown): string | null {
   return null;
 }
 
-/** recipeYield (number | string | array) → first integer as a string. */
-function parseYield(y: unknown): string {
+/** recipeYield (number | string | array) → { count, unit } where unit is any non-numeric suffix. */
+function parseYield(y: unknown): { count: string; unit: string } {
   const first = Array.isArray(y) ? y[0] : y;
-  const m = String(first ?? "").match(/\d+/);
-  return m ? m[0] : "";
+  const raw = String(first ?? "").trim();
+  const m = raw.match(/^(\d+)\s*(.*)$/);
+  if (!m) return { count: "", unit: "personnes" };
+  const unit = m[2].trim();
+  return { count: m[1], unit: unit || "personnes" };
 }
 
 /**
@@ -330,7 +334,9 @@ function mapRecipeNode(node: Record<string, unknown>, url: string): RecipeFormVa
   const values = emptyValues();
   values.title = strip(node.name);
   values.description = strip(node.description);
-  values.servings = parseYield(node.recipeYield);
+  const yld = parseYield(node.recipeYield);
+  values.servings = yld.count;
+  values.servingUnit = yld.unit;
   values.prepTime = isoToMinutes(node.prepTime);
   values.cookTime = isoToMinutes(node.cookTime);
   // If only totalTime is given, fall back to it as prep time.
@@ -433,6 +439,7 @@ function geminiRecipeToValues(r: GeminiRecipe, source: string): RecipeFormValues
   values.title = (r.title ?? "").trim();
   values.description = (r.description ?? "").trim();
   values.servings = numStr(r.servings);
+  values.servingUnit = (r.servingUnit ?? "").trim() || "personnes";
   values.prepTime = numStr(r.prepTime);
   values.cookTime = numStr(r.cookTime);
   values.restTime = numStr(r.restTime);

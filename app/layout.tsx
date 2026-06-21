@@ -43,7 +43,7 @@ const splineMono = Spline_Sans_Mono({
 
 export const metadata: Metadata = {
   title: { default: "Sur le Plat — Recettes maison", template: "%s · Sur le Plat" },
-  description: "Vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
+  description: "Toutes vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
 };
 
 // Dark top bar is what mobile browser chrome "sees".

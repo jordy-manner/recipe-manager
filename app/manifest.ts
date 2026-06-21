@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Sur le Plat — Recettes maison",
     short_name: "Sur le Plat",
     description:
-      "Vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
+      "Toutes vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
     start_url: "/recettes",
     display: "standalone",
     background_color: "#f3ecd8",

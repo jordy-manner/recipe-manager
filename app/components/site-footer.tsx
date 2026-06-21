@@ -109,7 +109,7 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
         <div className="flex flex-col items-start gap-2">
           <Logo size={46} />
           <p className="text-[12px] font-semibold tracking-[0.05em] text-ink-soft">
-            L&apos;app des œufs frais
+            Toutes vos recettes dans une même coquille
             {recipeCount != null && ` · ${recipeCount} recette${recipeCount > 1 ? "s" : ""}`}
           </p>
         </div>

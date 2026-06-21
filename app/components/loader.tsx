@@ -1,4 +1,4 @@
-import { Egg, Logo } from "./Logo";
+import { Egg } from "./Logo";
 
 // Page-transition loader: full-screen overlay, opaque immediately (no fade-in
 // — avoids revealing the screen behind during page transitions).
@@ -33,7 +33,25 @@ export function Loader() {
       </div>
 
       <div className="flex flex-col items-center" style={{ gap: "12px" }}>
-        <Logo size={46} />
+        {/* Wordmark text-only — no egg icon (egg lives exclusively in the bubble above). */}
+        <span
+          aria-hidden="true"
+          style={{
+            fontFamily: "var(--font-bangers, Bangers, cursive)",
+            fontWeight: 400,
+            fontSize: "46px",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            color: "#f5c700",
+            WebkitTextStroke: "3px #16181f",
+            paintOrder: "stroke fill",
+            textShadow: "-1px 1px 0 #15223d, -2px 2px 0 #15223d, -3px 3px 0 #15223d, -4px 4px 0 #15223d, -5px 5px 0 #15223d, -6px 6px 0 #15223d",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          Sur le Plat
+        </span>
         <span className="flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.18em] text-ink-faint">
           Ça mijote
           <span className="flex items-end gap-1">

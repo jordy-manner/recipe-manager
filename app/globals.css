@@ -359,7 +359,7 @@ body {
 }
 .foot-tag {
   color: var(--color-ink-soft);
-  font-size: 3.5cqw;
+  font-size: 4cqw;
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;

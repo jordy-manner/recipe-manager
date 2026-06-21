@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.5.0] — 2026-06-21
+
+- **"Sur le Plat" visual reskin** (#71, closes #68): full identity overhaul — eggshell/charcoal palette, Outfit/Bangers/Architects Daughter typography, egg SVG logo, yellow-halo preloader, halftone body background, default accent Jaune Vintage `#f5c700`, updated chrome (top bar, mobile tab bar, site footer), DESIGN.md token sync.
+
 ## [v0.4.9] — 2026-06-20
 
 - **Timer wall-clock fix** (#63, refs #62): timer remaining now derived from wall-clock delta instead of interval ticks — stays accurate when tab is backgrounded or screen locks.
